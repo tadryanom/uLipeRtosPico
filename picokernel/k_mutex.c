@@ -169,3 +169,53 @@ k_status_t mutex_give(kmutex_t *m)
 cleanup:
 	return(ret);
 }
+
+
+#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+
+kmutex_t * mutex_create_dynamic(void)
+{
+	kmutex_t *ret = (kmutex_t*)k_malloc(sizeof(kmutex_t));
+
+	if(ret) {
+		ret->thr_owner=NULL;
+		ret->owner_prio=0;
+		ret->created=false;
+	}
+
+	return(ret);
+}
+
+
+k_status_t mutex_delete_dynamic(kmutex_t * mtx)
+{
+	k_status_t ret = k_status_ok;
+
+	if(mtx == NULL)
+		goto cleanup;
+
+	archtype_t key = port_irq_lock();
+
+	/*
+	 * Mutexes only can be deleted if no tasks are pending, otherwise
+	 * returns a busy error to hint application to signal to all waiting
+	 * tasks
+	 */
+	if(mtx->threads_pending.bitmap){
+		ret = k_status_error;
+		port_irq_unlock(key);
+		goto cleanup;
+	}
+
+	/* release the memory */
+	k_free(mtx);
+
+
+	port_irq_unlock(key);
+
+cleanup:
+	return(ret);
+}
+
+#endif
+

@@ -42,6 +42,30 @@ typedef struct kmutex{
 	}
 
 
+
+#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+/**
+ *  @fn mutex_create_dynamic()
+ *  @brief creates a fully initialized mutex control block
+ *
+ *
+ *  @return a kmutex_t control structure ready to use
+ */
+kmutex_t * mutex_create_dynamic(void);
+
+
+/**
+ *  @fn mutex_delete_dynamic()
+ *  @brief destroys a previous allocated mutex control block
+ *
+ *  @param mutex - mutex to be destroyed
+ *
+ *  @return k_status_ok or error code in case of invalid use
+ */
+k_status_t mutex_delete_dynamic(kmutex_t * mtx);
+
+#endif
+
 /**
  *  @fn mutex_take()
  *  @brief take a mutex, block if not currently available or returns if try is set to true

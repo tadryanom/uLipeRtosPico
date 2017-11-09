@@ -46,7 +46,7 @@ TIMER_CONTROL_BLOCK_DECLARE(tm1, 2000);
 TIMER_CONTROL_BLOCK_DECLARE(tm2, 1542);
 TIMER_CONTROL_BLOCK_DECLARE(tm3, 685);
 
-MUTEX_BLOCK_DECLARE(mtx1);
+kmutex_t *mtx1;
 WQUEUE_CONTROL_BLOCK_DECLARE(mywq, 16);
 
 tcb_t *t8;
@@ -182,9 +182,9 @@ static void t4_task(void *arg)
 
 
 	for(;;) {
-		mutex_take(&mtx1, false);
+		mutex_take(mtx1, false);
 		strcpy(cbuffer, "thread 4 is owner of mutex! \n\r");
-		mutex_give(&mtx1);
+		mutex_give(mtx1);
 
 		thread_abort_dynamic(t8);
 		t8 = NULL;
@@ -199,9 +199,9 @@ static void t5_task(void *arg)
 
 
 	for(;;) {
-		mutex_take(&mtx1, false);
+		mutex_take(mtx1, false);
 		strcpy(cbuffer, "thread 5 is owner of mutex! \n\r");
-		mutex_give(&mtx1);
+		mutex_give(mtx1);
 		ticker_timer_wait(5698);
 	}
 
@@ -210,10 +210,10 @@ static void t6_task(void *arg)
 {
 
 	for(;;) {
-		mutex_take(&mtx1, false);
+		mutex_take(mtx1, false);
 		strcpy(cbuffer, "thread 6 is owner of mutex! \n\r");
 		ticker_timer_wait(879);
-		mutex_give(&mtx1);
+		mutex_give(mtx1);
 	}
 
 }
@@ -274,6 +274,9 @@ int main(void) {
 
     s2 = semaphore_create_dynamic(0, 1);
     ulipe_assert(s2 != NULL);
+
+    mtx1 = mutex_create_dynamic();
+    ulipe_assert(mtx1 != NULL);
 
 
     kernel_start();
