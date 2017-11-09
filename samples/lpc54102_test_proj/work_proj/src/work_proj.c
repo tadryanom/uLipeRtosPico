@@ -37,8 +37,8 @@ THREAD_CONTROL_BLOCK_DECLARE(t6, 64, 9);
 
 
 SEMAPHORE_BLOCK_DECLARE(s1,0,1);
-SEMAPHORE_BLOCK_DECLARE(s2,0,1);
-SEMAPHORE_BLOCK_DECLARE(s3,0,1);
+ksema_t *s2;
+ksema_t *s3;
 
 MEMPOOL_DECLARE(mem1, 64, 256);
 
@@ -123,12 +123,12 @@ static void t2_task(void *arg)
 {
 	uint32_t cntr = (uint32_t) arg;
 
-	timer_set_callback(&tm2, tm2_handler, &s2);
+	timer_set_callback(&tm2, tm2_handler, s2);
 	timer_start(&tm2);
 
 
 	for(;;) {
-		semaphore_take(&s2);
+		semaphore_take(s2);
 		cntr += 4;
 		timer_start(&tm2);
 
@@ -268,6 +268,12 @@ int main(void) {
     ulipe_assert(t8 != NULL);
 
     wqueue_init(&mywq);
+
+    s3 = semaphore_create_dynamic(0, 1);
+    ulipe_assert(s3 != NULL);
+
+    s2 = semaphore_create_dynamic(0, 1);
+    ulipe_assert(s2 != NULL);
 
 
     kernel_start();

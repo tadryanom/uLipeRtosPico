@@ -133,3 +133,51 @@ cleanup:
 }
 
 
+
+#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+
+ksema_t * semaphore_create_dynamic(uint32_t initial, uint32_t limit)
+{
+	ksema_t *ret = (ksema_t*)k_malloc(sizeof(ksema_t));
+
+	if(ret) {
+		ret->cnt=initial;
+		ret->limit=limit;
+		ret->created=false;
+	}
+
+	return(ret);
+}
+
+
+k_status_t semaphore_delete_dynamic(ksema_t * sem)
+{
+	k_status_t ret = k_status_ok;
+
+	if(sem == NULL)
+		goto cleanup;
+
+	archtype_t key = port_irq_lock();
+
+	/*
+	 * Semaphores only can be deleted if no tasks are pending, otherwise
+	 * returns a busy error to hint application to signal to all waiting
+	 * tasks
+	 */
+	if(sem->threads_pending.bitmap){
+		ret = k_sema_not_available;
+		port_irq_unlock(key);
+		goto cleanup;
+	}
+
+	/* release the memory */
+	k_free(sem);
+
+
+	port_irq_unlock(key);
+
+cleanup:
+	return(ret);
+}
+
+#endif
