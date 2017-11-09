@@ -58,6 +58,7 @@ typedef struct ktcb{
 	archtype_t signals_actual;
 	archtype_t timer_wait;
 	k_list_t thr_link;
+
 }tcb_t;
 
 
@@ -83,6 +84,36 @@ typedef struct ktcb{
 				.wake_tick=0,													\
 		}
 
+#if (K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+
+/**
+ *  @fn thread_create_dynamic()
+ *  @brief obtains a full initialized thread control block ready to be created
+ *
+ *  @param name - name of thread control structure created, used as parameter to threads API
+ *  @param stack_size_val - size of stack in archtype_t entries (not in bytes!)
+ *  @param priority - priority of the thread after created range from 0 to 31
+ *
+ *  @return a tcb_t control structure ready to use
+ */
+tcb_t *thread_create_dynamic(thread_t func, void *arg ,uint32_t stack_size, uint8_t priority);
+
+
+/**
+ *  @fn thread_abort_dynamic()
+ *  @brief stops thread execution and make it not executable again (only using create) and delete the TCB
+ *
+ *  @param t - thread to be stopped, NULL or the thread itself is not allowed
+ *
+ *  @return k_status_ok or error code in case of invalid value
+ *
+ *  WARNING: AFTER abort a thread its tcb pointer must be cleared or a accidental
+ *  		 calling of this function again will result in unexpected behavior!
+ *
+ */
+k_status_t thread_abort_dynamic(tcb_t *t);
+
+#endif
 
 
 /**

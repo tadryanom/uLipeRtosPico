@@ -49,12 +49,17 @@ TIMER_CONTROL_BLOCK_DECLARE(tm3, 685);
 MUTEX_BLOCK_DECLARE(mtx1);
 WQUEUE_CONTROL_BLOCK_DECLARE(mywq, 16);
 
+tcb_t *t8;
+
 unsigned char *ptr[256] = {0};
 
 struct job {
 	ksema_t *sem;
 	wqueue_job_t job;
 };
+
+
+static void t8_task(void *arg);
 
 
 static void deferred_handler(wqueue_job_t *j)
@@ -180,6 +185,10 @@ static void t4_task(void *arg)
 		mutex_take(&mtx1, false);
 		strcpy(cbuffer, "thread 4 is owner of mutex! \n\r");
 		mutex_give(&mtx1);
+
+		thread_abort_dynamic(t8);
+		t8 = NULL;
+
 		ticker_timer_wait(563);
 
 	}
@@ -207,6 +216,15 @@ static void t6_task(void *arg)
 		mutex_give(&mtx1);
 	}
 
+}
+
+static void t8_task(void *arg)
+{
+
+	thread_abort_dynamic(NULL);
+	for(;;) {
+		ticker_timer_wait(100);
+	}
 }
 
 
@@ -245,6 +263,9 @@ int main(void) {
     thread_create(t4_task, 0, &t4);
     thread_create(t5_task, 4, &t5);
     thread_create(t6_task, 8, &t6);
+
+    t8 = thread_create_dynamic(t8_task,0,256, 31);
+    ulipe_assert(t8 != NULL);
 
     wqueue_init(&mywq);
 
