@@ -261,4 +261,21 @@ cleanup:
 }
 
 
+#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+
+kmsg_t * message_create_dynamic(uint32_t noof_slots, uint32_t slot_size_val)
+{
+
+}
+
+
+k_status_t message_delete_dynamic(kmsg_t * msg)
+{
+
+}
+
+#endif
+
+
+
 #endif

@@ -56,6 +56,32 @@ typedef enum {
 	}
 
 
+
+#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+/**
+ *  @fn message_create_dynamic()
+ *  @brief creates a fully initialized message control block
+ *
+ *  @param noof_slots - number of elements of this message
+ *  @param slot_size_val - size in bytes of this message slot
+ *
+ *  @return a ktimer_t control structure ready to use
+ */
+kmsg_t * message_create_dynamic(uint32_t noof_slots, uint32_t slot_size_val);
+
+
+/**
+ *  @fn message_delete_dynamic()
+ *  @brief destroys a previous allocated message control block
+ *
+ *  @param msg - message to be destroyed
+ *
+ *  @return k_status_ok or error code in case of invalid use
+ */
+k_status_t message_delete_dynamic(kmsg_t * msg);
+
+#endif
+
 /**
  *  @fn message_insert()
  *  @brief insert data on message queue and optionally block if there is no space free
