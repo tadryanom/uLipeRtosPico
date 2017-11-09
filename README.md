@@ -26,8 +26,8 @@ The kernel uses a fully preemptive-cooperative schedule policy, and supports up 
 - Mutual exclusion semaphores with priority ceilling protocol;
 - Message queues;
 - Soft timers with tickless feature (hardware timer provided by user);
-- **(NEW)** Constant time, low & constant overhead fixed size memory pool (up to 1024 elements per pool);
-- **(NEW)** Constant time, low overhead dynamic memory allocator based on TLSF strategy, tuned to have a low overhead of 480bytes;
+- **(NEW)**Constant time, low & constant overhead fixed size memory pool (up to 1024 elements per pool);
+- **(NEW)**Constant time, low overhead dynamic memory allocator based on TLSF strategy, tuned to have a low overhead of 480bytes;
 - Workqueues, suitable form to defer asynchronous jobs and create event driven state machines;
 - Unlimited kernel objects (limited by processor memory);
 - Port file formed by two simple files in C and Assembly, simple to port;
