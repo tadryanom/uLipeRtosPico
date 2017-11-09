@@ -43,8 +43,8 @@ ksema_t *s3;
 MEMPOOL_DECLARE(mem1, 64, 256);
 
 TIMER_CONTROL_BLOCK_DECLARE(tm1, 2000);
-TIMER_CONTROL_BLOCK_DECLARE(tm2, 1542);
-TIMER_CONTROL_BLOCK_DECLARE(tm3, 685);
+ktimer_t *tm2;
+ktimer_t *tm3;
 
 kmutex_t *mtx1;
 WQUEUE_CONTROL_BLOCK_DECLARE(mywq, 16);
@@ -123,14 +123,14 @@ static void t2_task(void *arg)
 {
 	uint32_t cntr = (uint32_t) arg;
 
-	timer_set_callback(&tm2, tm2_handler, s2);
-	timer_start(&tm2);
+	timer_set_callback(tm2, tm2_handler, s2);
+	timer_start(tm2);
 
 
 	for(;;) {
 		semaphore_take(s2);
 		cntr += 4;
-		timer_start(&tm2);
+		timer_start(tm2);
 
 	}
 
@@ -277,6 +277,12 @@ int main(void) {
 
     mtx1 = mutex_create_dynamic();
     ulipe_assert(mtx1 != NULL);
+
+    tm3 = timer_create_dynamic(685);
+    ulipe_assert(tm3 != NULL);
+
+    tm2 = timer_create_dynamic(685);
+    ulipe_assert(tm2 != NULL);
 
 
     kernel_start();

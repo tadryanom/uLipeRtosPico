@@ -692,6 +692,60 @@ cleanup:
 	return(ret);
 }
 
+
+#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+ktimer_t * timer_create_dynamic(uint32_t load_value)
+{
+	ktimer_t *ret = NULL;
+
+	if(!load_value)
+		goto cleanup;
+
+	ret = (ktimer_t *)k_malloc(sizeof(ktimer_t));
+
+	if(ret) {
+		ret->timer_to_wait=load_value;
+		ret->running=false;
+		ret->expired=true;
+		ret->threads_pending.bitmap=0;
+		ret->created=false;
+	}
+
+cleanup:
+	return(ret);
+}
+
+
+k_status_t timer_delete_dynamic(ktimer_t * tim)
+{
+	k_status_t ret = k_status_ok;
+
+	if(tim == NULL) {
+		ret = k_status_invalid_param;
+		goto cleanup;
+	}
+
+	archtype_t key = port_irq_lock();
+
+	if(tim->expired == false) {
+		ret = k_timer_busy;
+		port_irq_unlock(key);
+		goto cleanup;
+	}
+
+
+	k_free(tim);
+
+	port_irq_unlock(key);
+
+cleanup:
+	return(ret);
+}
+
+#endif
+
+
+
 #endif
 
 
@@ -733,5 +787,6 @@ uint32_t timer_get_tick_count(void)
 
 	return(ret);
 }
+
 
 #endif

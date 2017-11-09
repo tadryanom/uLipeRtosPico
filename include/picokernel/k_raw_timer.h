@@ -74,6 +74,29 @@ typedef struct k_wakeup_info {
 		}
 
 
+#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+/**
+ *  @fn timer_create_dynamic()
+ *  @brief creates a fully initialized timer control block
+ *  @param load_value - initial load value (can be changed using timer API)
+ *
+ *  @return a ktimer_t control structure ready to use
+ */
+ktimer_t * timer_create_dynamic(uint32_t load_value);
+
+
+/**
+ *  @fn timer_delete_dynamic()
+ *  @brief destroys a previous allocated timer control block
+ *
+ *  @param tim - timer to be destroyed
+ *
+ *  @return k_status_ok or error code in case of invalid use
+ */
+k_status_t timer_delete_dynamic(ktimer_t * tim);
+
+#endif
+
 
 /**
  *  @fn timer_start()
