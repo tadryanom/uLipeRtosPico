@@ -179,6 +179,23 @@ tcb_t * k_unpend_obj(k_work_list_t *obj_list)
 	}
 #endif
 
+	/* before to unpend, we need to scan the pendable list
+	 * to find possible lists with bitmap set but with no entries,
+	 * this is a specific case and only occurs when the user
+	 * deletes a thread, the entry is removed in delete function
+	 * calling, but the bitmap of pendable list cannot be changed
+	 * so to avoid the use of a couple of pointers tracking objects
+	 * we add this exception of the real time execution rule
+	 */
+	uint32_t bit_finder = 0x00000001;
+
+	for ( uint8_t i = 0; i < K_PRIORITY_LEVELS; i++) {
+		if(bit_finder & obj_list->bitmap) {
+			if (sys_dlist_is_empty(&obj_list->list_head[(K_PRIORITY_LEVELS - 1) + i]))
+				obj_list->bitmap &= ~(1 << K_PRIORITY_LEVELS - 1 + i);
+		}
+	}
+
 
 	/*
 	 * unpend a obj is a little bit complex relative to a

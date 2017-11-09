@@ -179,7 +179,6 @@ k_status_t thread_abort(tcb_t *t)
 	 */
 	t->created = false;
 
-
 	/* perform reesched to find next task to run */
 	port_irq_unlock(key);
 	k_sched_and_swap();
@@ -486,6 +485,7 @@ k_status_t thread_set_prio(tcb_t *t, uint8_t prio)
 
 
 	if(t->thread_wait) {
+		port_irq_unlock(key);
 		goto cleanup;
 	}
 
@@ -507,5 +507,67 @@ tcb_t *thread_get_current(void)
 	ret = k_current_task;
 	return(ret);
 }
+
+#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+
+tcb_t *thread_create_dynamic(thread_t func, void *arg ,uint32_t stack_size, uint8_t priority)
+{
+	tcb_t *ret = (tcb_t *)k_malloc(sizeof(tcb_t));
+	if(ret == NULL)
+		goto cleanup;
+
+	archtype_t *stk = (archtype_t *)k_malloc(K_MINIMAL_STACK_VAL + (stack_size * sizeof(archtype_t)));
+	if(stk == NULL) {
+		k_free(ret);
+		goto cleanup;
+	}
+
+	/* populate tcb with default values */
+	ret->stack_base=stk;
+	ret->stack_size=K_MINIMAL_STACK_VAL+stack_size;
+	ret->thread_prio = priority;
+	ret->thread_wait = 0;
+	ret->wake_tick = 0;
+	ret->created = false;
+
+	k_status_t err = thread_create(func,arg, ret);
+
+	if(err != k_status_ok) {
+		k_free(ret->stack_base);
+		k_free(ret);
+		ret = NULL;
+	}
+
+cleanup:
+	return ret;
+}
+
+
+k_status_t thread_abort_dynamic(tcb_t *t) {
+
+	k_status_t err = k_status_ok;
+
+	/* cannot abort a thread dinamically from itself */
+	if((t == NULL) || (t == thread_get_current())) {
+		err = k_status_invalid_param;
+		goto cleanup;
+	}
+
+	archtype_t key = port_irq_lock();
+
+	/* abort the thread  and after release its memory */
+	err = thread_abort(t);
+	if(err == k_status_ok) {
+		k_free(t->stack_base);
+		k_free(t);
+	}
+
+	port_irq_unlock(key);
+
+cleanup:
+	return(err);
+}
+
+#endif
 
 

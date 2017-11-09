@@ -4,7 +4,7 @@ uLipeRtosPico is a subset of uLipeRTOS, but is small and powerful real time kern
 The kernel uses a fully preemptive-cooperative schedule policy, and supports up to 32 priority levels for maximum flexibility.
 
 # Low memory footprint:
-  - 1.2KB of code with full modules enabled*; 
+  - 2.0KB of code with full modules enabled*; 
   - 80B of RAM data used by the kernel;	
   - fully static allocation of kernel objects less than 40 bytes per one(user controls ram usage during compile time);
 
@@ -16,7 +16,8 @@ The kernel uses a fully preemptive-cooperative schedule policy, and supports up 
 - Fast and predictable execution time context switching;
 - Tickless optional operation;
 - Static kernel object allocation;
-- Supports up to 32 priority levels (0 - 31);
+- **(NEW)** Dynamic threads creation and destruction;
+- **(NEW)** Supports up to 32 priority levels (0 - 31);
 - Preemtpive kernel policy;
 - Cooperative kernel policy with same priority threads;
 - Thread signals with set, clear, any and match capabilities;
@@ -25,8 +26,8 @@ The kernel uses a fully preemptive-cooperative schedule policy, and supports up 
 - Mutual exclusion semaphores with priority ceilling protocol;
 - Message queues;
 - Soft timers with tickless feature (hardware timer provided by user);
-- Constant time, low & constant overhead fixed size memory pool (up to 1024 elements per pool);
-- Constant time, low overhead dynamic memory allocator based on TLSF strategy, tuned to have a low overhead of 480bytes;
+- **(NEW)** Constant time, low & constant overhead fixed size memory pool (up to 1024 elements per pool);
+- **(NEW)** Constant time, low overhead dynamic memory allocator based on TLSF strategy, tuned to have a low overhead of 480bytes;
 - Workqueues, suitable form to defer asynchronous jobs and create event driven state machines;
 - Unlimited kernel objects (limited by processor memory);
 - Port file formed by two simple files in C and Assembly, simple to port;
@@ -34,8 +35,9 @@ The kernel uses a fully preemptive-cooperative schedule policy, and supports up 
 
 # Recommended processor resources
 
-- 2KB of Code targeted memory(ROM);
+- 3KB of Code targeted memory(ROM);
 - 128B of Data memory (RAM) or 372B of Data memory(RAM) in case of mempool use;
+- 1024B of Data memory (RAM) in case of heap use;
 
 
 # Basic Usage

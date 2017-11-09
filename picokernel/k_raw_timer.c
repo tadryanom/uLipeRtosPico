@@ -17,7 +17,7 @@
 
 #if(K_ENABLE_TIMERS > 0)
 /* static variables */
-static k_list_t k_timed_list;
+static k_list_t k_timed_list = SYS_DLIST_STATIC_INIT(&k_timed_list);
 
 #ifndef K_ENABLE_TIMER_GENERIC_SUPPORT
 static archtype_t k_elapsed_time = 0;
@@ -30,7 +30,7 @@ ktimer_t *actual_timer;
 
 uint32_t tick_count = 0;
 tcb_t * next_task_wake = NULL;
-static k_list_t k_ticker_list;
+static k_list_t k_ticker_list = SYS_DLIST_STATIC_INIT(&k_ticker_list);
 
 k_wakeup_info_t wu_info;
 
@@ -192,11 +192,8 @@ void timer_dispatcher(void *args)
 	archtype_t key = port_irq_lock();
 
 #if(K_ENABLE_TIMERS > 0)
-	sys_dlist_init(&k_timed_list);
 	actual_timer = NULL;
 #endif
-
-	sys_dlist_init(&k_ticker_list);
 	next_task_wake = NULL;
 	port_irq_unlock(key);
 
