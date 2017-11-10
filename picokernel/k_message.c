@@ -266,12 +266,75 @@ cleanup:
 kmsg_t * message_create_dynamic(uint32_t noof_slots, uint32_t slot_size_val)
 {
 
+	kmsg_t *ret = NULL;
+
+	/* both slot size and its quantity needs to be valid */
+	if((noof_slots == 0) || (slot_size_val == 0))
+		goto cleanup;
+
+
+	ret = k_malloc(sizeof(kmsg_t));
+
+	/* maybe we have not enough memory */
+	if(ret == NULL);
+		goto cleanup;
+
+
+	uint8_t *slots = k_malloc(noof_slots * (slot_size_val + sizeof(archtype_t)));
+
+	/* not enough memory, cleanup and exit */
+	if(slots == NULL) {
+		k_free(ret);
+		ret = NULL;
+		goto cleanup;
+	}
+
+
+	/* initialize block */
+
+	ret->data = slots;
+	ret->items = 0;
+	ret->slots_number = noof_slots;
+	ret->wr_ptr = 0;
+	ret->rd_ptr = 0;
+	ret->slot_size = slot_size_val;
+	ret->wr_threads_pending.bitmap=0;
+	ret->rd_threads_pending.bitmap=0;
+	ret->created=false;
+
+
+
+cleanup:
+	return(ret);
 }
 
 
 k_status_t message_delete_dynamic(kmsg_t * msg)
 {
+	k_status_t ret = k_status_ok;
 
+	if(msg == NULL){
+		ret = k_status_invalid_param;
+		goto cleanup;
+	}
+
+	archtype_t key = port_irq_lock();
+
+	/* cannot delete a message with waiting tasks
+	 */
+	if((msg->rd_threads_pending.bitmap) || (msg->wr_threads_pending.bitmap)) {
+		ret = k_status_error;
+		port_irq_unlock(key);
+		goto cleanup;
+	}
+
+	/* release memory and exit */
+	k_free(msg->data);
+	k_free(msg);
+
+	port_irq_unlock(key);
+cleanup:
+	return(ret);
 }
 
 #endif

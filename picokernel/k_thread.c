@@ -519,6 +519,7 @@ tcb_t *thread_create_dynamic(thread_t func, void *arg ,uint32_t stack_size, uint
 	archtype_t *stk = (archtype_t *)k_malloc(K_MINIMAL_STACK_VAL + (stack_size * sizeof(archtype_t)));
 	if(stk == NULL) {
 		k_free(ret);
+		ret = NULL;
 		goto cleanup;
 	}
 
