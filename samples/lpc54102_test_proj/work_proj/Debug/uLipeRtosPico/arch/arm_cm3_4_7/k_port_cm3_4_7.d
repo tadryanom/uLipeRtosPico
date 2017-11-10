@@ -15,6 +15,8 @@ uLipeRtosPico/arch/arm_cm3_4_7/k_port_cm3_4_7.o \
  /home/venturus/devel/uLipeRtosPico/include/picokernel/k_mem_dyn.h \
  /home/venturus/devel/uLipeRtosPico/include/picokernel/k_wqueue.h \
  /home/venturus/devel/uLipeRtosPico/include/picokernel/k_port.h \
+ /home/venturus/devel/uLipeRtosPico/cmsis_rtos/cmsis_os.h \
+ /home/venturus/devel/uLipeRtosPico/cmsis_rtos/include/cmsis_os2.h \
  /home/venturus/devel/uLipeRtosPico/include/arch/k_port_m3_4_7_defs.h
 
 /home/venturus/devel/uLipeRtosPico/ulipe_rtos_pico.h:
@@ -44,5 +46,9 @@ uLipeRtosPico/arch/arm_cm3_4_7/k_port_cm3_4_7.o \
 /home/venturus/devel/uLipeRtosPico/include/picokernel/k_wqueue.h:
 
 /home/venturus/devel/uLipeRtosPico/include/picokernel/k_port.h:
+
+/home/venturus/devel/uLipeRtosPico/cmsis_rtos/cmsis_os.h:
+
+/home/venturus/devel/uLipeRtosPico/cmsis_rtos/include/cmsis_os2.h:
 
 /home/venturus/devel/uLipeRtosPico/include/arch/k_port_m3_4_7_defs.h:

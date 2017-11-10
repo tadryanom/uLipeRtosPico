@@ -121,7 +121,13 @@ extern void user_lowpower_exit(void *arg);
 #include "include/picokernel/k_port.h"
 
 
-
+#if (K_ENABLE_CMSIS_RTOS2_SUPPORT > 0)
+#if !defined(ARCH_TYPE_ARM_CM0) && !defined(ARCH_TYPE_ARM_CM3_4_7)
+	#error "Fatal: CMSIS RTOS only can be used with ARM derivatives, check you config file!"
+#else
+	#include "cmsis_rtos/cmsis_os.h"
+#endif
+#endif
 /** assertion mechanism */
 static inline void ulipe_assert(bool x)
 {

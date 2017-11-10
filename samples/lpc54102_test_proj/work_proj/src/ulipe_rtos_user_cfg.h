@@ -30,10 +30,12 @@
 #define K_WQUEUES_STACK_SIZE 			128
 #define K_ENABLE_DYNAMIC_ALLOCATOR		1
 #define K_HEAP_SIZE						16384
+#define K_ENABLE_CMSIS_RTOS2_SUPPORT	1
 
 /* Tickless idle support */
 #define K_ENABLE_TICKLESS_IDLE			1
 #define K_MAX_LOW_POWER_PERIOD			(500)
+
 
 
 #endif

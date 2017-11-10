@@ -132,6 +132,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>uLipeRtosPico/cmsis_rtos</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>uLipeRtosPico/include</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -1083,6 +1088,21 @@
 		</link>
 		<link>
 			<name>uLipeRtosPico/arch/avr_tiny</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>uLipeRtosPico/cmsis_rtos/cmsis_os.h</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/cmsis_rtos/cmsis_os.h</locationURI>
+		</link>
+		<link>
+			<name>uLipeRtosPico/cmsis_rtos/include</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>uLipeRtosPico/cmsis_rtos/src</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
@@ -3420,6 +3440,16 @@
 			<name>uLipeRtosPico/arch/avr_tiny/k_port_avr_tiny_a.S</name>
 			<type>1</type>
 			<locationURI>PARENT-3-PROJECT_LOC/arch/avr_tiny/k_port_avr_tiny_a.S</locationURI>
+		</link>
+		<link>
+			<name>uLipeRtosPico/cmsis_rtos/include/cmsis_os2.h</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/cmsis_rtos/include/cmsis_os2.h</locationURI>
+		</link>
+		<link>
+			<name>uLipeRtosPico/cmsis_rtos/src/cmsis_ulipe_pico.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/cmsis_rtos/src/cmsis_ulipe_pico.c</locationURI>
 		</link>
 		<link>
 			<name>uLipeRtosPico/include/arch/k_port_avr_tiny_defs.h</name>
