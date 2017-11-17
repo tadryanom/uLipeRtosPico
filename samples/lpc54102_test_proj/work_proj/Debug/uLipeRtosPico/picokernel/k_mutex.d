@@ -14,8 +14,8 @@ uLipeRtosPico/picokernel/k_mutex.o uLipeRtosPico/picokernel/k_mutex.d: \
  /home/venturus/devel/uLipeRtosPico/include/picokernel/k_mem_dyn.h \
  /home/venturus/devel/uLipeRtosPico/include/picokernel/k_wqueue.h \
  /home/venturus/devel/uLipeRtosPico/include/picokernel/k_port.h \
- /home/venturus/devel/uLipeRtosPico/cmsis_rtos/cmsis_os.h \
- /home/venturus/devel/uLipeRtosPico/cmsis_rtos/include/cmsis_os2.h
+ /home/venturus/devel/uLipeRtosPico/ext/cmsis_rtos/cmsis_os.h \
+ /home/venturus/devel/uLipeRtosPico/ext/cmsis_rtos/include/cmsis_os2.h
 
 /home/venturus/devel/uLipeRtosPico/ulipe_rtos_pico.h:
 
@@ -45,6 +45,6 @@ uLipeRtosPico/picokernel/k_mutex.o uLipeRtosPico/picokernel/k_mutex.d: \
 
 /home/venturus/devel/uLipeRtosPico/include/picokernel/k_port.h:
 
-/home/venturus/devel/uLipeRtosPico/cmsis_rtos/cmsis_os.h:
+/home/venturus/devel/uLipeRtosPico/ext/cmsis_rtos/cmsis_os.h:
 
-/home/venturus/devel/uLipeRtosPico/cmsis_rtos/include/cmsis_os2.h:
+/home/venturus/devel/uLipeRtosPico/ext/cmsis_rtos/include/cmsis_os2.h:

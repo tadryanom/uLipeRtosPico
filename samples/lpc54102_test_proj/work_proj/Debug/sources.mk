@@ -18,6 +18,6 @@ src \
 uLipeRtosPico/arch/arm_cm0 \
 uLipeRtosPico/arch/arm_cm3_4_7 \
 uLipeRtosPico/arch/avr_tiny \
-uLipeRtosPico/cmsis_rtos/src \
+uLipeRtosPico/ext/cmsis_rtos/src \
 uLipeRtosPico/picokernel \
 

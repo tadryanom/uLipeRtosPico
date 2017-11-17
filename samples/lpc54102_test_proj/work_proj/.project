@@ -132,7 +132,7 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>uLipeRtosPico/cmsis_rtos</name>
+			<name>uLipeRtosPico/ext</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
@@ -1092,17 +1092,7 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>uLipeRtosPico/cmsis_rtos/cmsis_os.h</name>
-			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/cmsis_rtos/cmsis_os.h</locationURI>
-		</link>
-		<link>
-			<name>uLipeRtosPico/cmsis_rtos/include</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>uLipeRtosPico/cmsis_rtos/src</name>
+			<name>uLipeRtosPico/ext/cmsis_rtos</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
@@ -3442,14 +3432,19 @@
 			<locationURI>PARENT-3-PROJECT_LOC/arch/avr_tiny/k_port_avr_tiny_a.S</locationURI>
 		</link>
 		<link>
-			<name>uLipeRtosPico/cmsis_rtos/include/cmsis_os2.h</name>
+			<name>uLipeRtosPico/ext/cmsis_rtos/cmsis_os.h</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/cmsis_rtos/include/cmsis_os2.h</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/ext/cmsis_rtos/cmsis_os.h</locationURI>
 		</link>
 		<link>
-			<name>uLipeRtosPico/cmsis_rtos/src/cmsis_ulipe_pico.c</name>
-			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/cmsis_rtos/src/cmsis_ulipe_pico.c</locationURI>
+			<name>uLipeRtosPico/ext/cmsis_rtos/include</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>uLipeRtosPico/ext/cmsis_rtos/src</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
 			<name>uLipeRtosPico/include/arch/k_port_avr_tiny_defs.h</name>
@@ -5315,6 +5310,21 @@
 			<name>uLipeRtosPico/.git/refs/remotes/origin</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>uLipeRtosPico/ext/cmsis_rtos/include/cmsis_os2.h</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/ext/cmsis_rtos/include/cmsis_os2.h</locationURI>
+		</link>
+		<link>
+			<name>uLipeRtosPico/ext/cmsis_rtos/include/os_tick.h</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/ext/cmsis_rtos/include/os_tick.h</locationURI>
+		</link>
+		<link>
+			<name>uLipeRtosPico/ext/cmsis_rtos/src/cmsis_ulipe_pico.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/ext/cmsis_rtos/src/cmsis_ulipe_pico.c</locationURI>
 		</link>
 		<link>
 			<name>uLipeRtosPico/samples/lpc54102_test_proj/lpc_board_lpcxpresso_54102/.cproject</name>

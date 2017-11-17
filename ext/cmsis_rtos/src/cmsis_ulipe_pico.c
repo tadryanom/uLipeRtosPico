@@ -24,7 +24,7 @@
  * Title:        cmsis_os_v1.c V1 module file
  *---------------------------------------------------------------------------*/
 
-#include "../../ulipe_rtos_pico.h"
+#include "../../../ulipe_rtos_pico.h"
 #include "../cmsis_os.h"
 
 
@@ -33,10 +33,7 @@
 
 
 osThreadId osThreadCreate (const osThreadDef_t *thread_def, void *argument) {
-
 }
-
-
 
 
 int32_t osSignalSet (osThreadId thread_id, int32_t signals) {
@@ -120,5 +117,6 @@ osEvent osMailGet (osMailQId queue_id, uint32_t millisec) {
 osStatus osMailFree (osMailQId queue_id, void *mail) {
 }
 
+
 #endif
-#endif  // K_ENABLE_CMSIS_RTOS2_SUPPORT
+#endif

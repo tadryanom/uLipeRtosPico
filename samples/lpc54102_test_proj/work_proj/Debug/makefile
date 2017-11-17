@@ -9,7 +9,7 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include uLipeRtosPico/picokernel/subdir.mk
--include uLipeRtosPico/cmsis_rtos/src/subdir.mk
+-include uLipeRtosPico/ext/cmsis_rtos/src/subdir.mk
 -include uLipeRtosPico/arch/avr_tiny/subdir.mk
 -include uLipeRtosPico/arch/arm_cm3_4_7/subdir.mk
 -include uLipeRtosPico/arch/arm_cm0/subdir.mk

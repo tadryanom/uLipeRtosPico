@@ -15,8 +15,8 @@ uLipeRtosPico/arch/avr_tiny/k_port_avr_tiny.o \
  /home/venturus/devel/uLipeRtosPico/include/picokernel/k_mem_dyn.h \
  /home/venturus/devel/uLipeRtosPico/include/picokernel/k_wqueue.h \
  /home/venturus/devel/uLipeRtosPico/include/picokernel/k_port.h \
- /home/venturus/devel/uLipeRtosPico/cmsis_rtos/cmsis_os.h \
- /home/venturus/devel/uLipeRtosPico/cmsis_rtos/include/cmsis_os2.h \
+ /home/venturus/devel/uLipeRtosPico/ext/cmsis_rtos/cmsis_os.h \
+ /home/venturus/devel/uLipeRtosPico/ext/cmsis_rtos/include/cmsis_os2.h \
  /home/venturus/devel/uLipeRtosPico/include/arch/k_port_avr_tiny_defs.h
 
 /home/venturus/devel/uLipeRtosPico/ulipe_rtos_pico.h:
@@ -47,8 +47,8 @@ uLipeRtosPico/arch/avr_tiny/k_port_avr_tiny.o \
 
 /home/venturus/devel/uLipeRtosPico/include/picokernel/k_port.h:
 
-/home/venturus/devel/uLipeRtosPico/cmsis_rtos/cmsis_os.h:
+/home/venturus/devel/uLipeRtosPico/ext/cmsis_rtos/cmsis_os.h:
 
-/home/venturus/devel/uLipeRtosPico/cmsis_rtos/include/cmsis_os2.h:
+/home/venturus/devel/uLipeRtosPico/ext/cmsis_rtos/include/cmsis_os2.h:
 
 /home/venturus/devel/uLipeRtosPico/include/arch/k_port_avr_tiny_defs.h:

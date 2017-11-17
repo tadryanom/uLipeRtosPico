@@ -287,6 +287,8 @@ int main(void) {
 
     kernel_start();
 
+
+
     // Force the counter to be placed into memory
     volatile static int i = 0 ;
     // Enter an infinite loop, just incrementing a counter
