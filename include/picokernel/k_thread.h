@@ -12,18 +12,6 @@
 #define __K_THREAD_H
 
 
-/* define the stask status, not used in user application*/
-#define K_THR_SUSPENDED  			(0x01)
-#define K_THR_PEND_SEMA  			(0x02)
-#define K_THR_PEND_MSG	 			(0x04)
-#define K_THR_PEND_TMR	 			(0x08)
-#define K_THR_PEND_SIGNAL_ALL 		(0x10)
-#define K_THR_PEND_SIGNAL_ANY 		(0x20)
-#define K_THR_PEND_SIGNAL_ALL_C 	(0x40)
-#define K_THR_PEND_SIGNAL_ANY_C 	(0x80)
-#define K_THR_PEND_TICKER	 		(0x100)
-#define K_THR_PEND_MTX		 		(0x200)
-
 
 
 /* define signals options */
@@ -43,46 +31,6 @@ typedef enum {
  */
 typedef void (*thread_t) (void *arg);
 
-
-/* thread control block data structure */
-typedef struct ktcb{
-	archtype_t *stack_top;
-	archtype_t *stack_base;
-	archtype_t stk_usage;
-	uint16_t thread_wait;
-	uint8_t thread_prio;
-	bool created;
-	uint32_t stack_size;
-	uint32_t wake_tick;
-	archtype_t signals_wait;
-	archtype_t signals_actual;
-	archtype_t timer_wait;
-	k_list_t thr_link;
-
-}tcb_t;
-
-
-/**
- *  @fn THREAD_CONTROL_BLOCK_DECLARE()
- *  @brief declares a full initialized thread control block ready to be created
- *
- *  @param name - name of thread control structure created, used as parameter to threads API
- *  @param stack_size_val - size of stack in archtype_t entries (not in bytes!)
- *  @param priority - priority of the thread after created range from 0 to 31
- *
- *  @return a tcb_t control structure ready to use
- */
-
-#define THREAD_CONTROL_BLOCK_DECLARE(name, stack_size_val, priority) 			\
-		static archtype_t stack_##name[stack_size_val+K_MINIMAL_STACK_VAL];		\
-	    tcb_t name = {															\
-				.stack_base = &stack_##name[0],									\
-				.stack_size	= K_MINIMAL_STACK_VAL+stack_size_val,				\
-				.thread_prio=priority,											\
-				.thread_wait=0,													\
-				.created=false,													\
-				.wake_tick=0,													\
-		}
 
 #if (K_ENABLE_DYNAMIC_ALLOCATOR > 0)
 

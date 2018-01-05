@@ -16,8 +16,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-
-#include "picokernel/inc/k_list.h"
 #include "ulipe_rtos_kconfig.h"
 
 #ifndef __ULIPE_RTOS_KCONFIG_H
@@ -121,13 +119,6 @@ extern void user_lowpower_exit(void *arg);
 #include "include/picokernel/k_port.h"
 
 
-#if (K_ENABLE_CMSIS_RTOS2_SUPPORT > 0)
-#if (ARCH_TYPE_ARM_CM0  > 0) || (ARCH_TYPE_ARM_CM3_4_7 > 0)
-	#include "ext/cmsis_rtos/cmsis_os.h"
-#else
-	#error "Fatal: CMSIS RTOS only can be used with ARM derivatives, check you config file!"
-#endif
-#endif
 /** assertion mechanism */
 static inline void ulipe_assert(bool x)
 {

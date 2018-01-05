@@ -11,38 +11,6 @@
 
 #if K_ENABLE_MUTEX > 0
 
-
-/** define mutex celing priority value */
-#define K_MUTEX_PRIO_CEIL_VAL	(K_PRIORITY_LEVELS - 8)
-
-
-
-/* semaphore control block structure */
-typedef struct kmutex{
-	bool created;
-	uint8_t owner_prio;
-	tcb_t *thr_owner;
-	k_work_list_t threads_pending;
-}kmutex_t;
-
-
-/**
- *  @fn MUTEX_BLOCK_DECLARE()
- *  @brief declares a fully initialized mutex control block
- *
- *  @param name - name of mutex control structure created, it will used as parameter on mutex API
- *
- *  @return a kmutex_t control structure ready to use
- */
-#define MUTEX_BLOCK_DECLARE(name)							\
-	static kmutex_t name = {								\
-			.thr_owner=NULL,								\
-			.owner_prio=0,									\
-			.created=false,									\
-	}
-
-
-
 #if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
 /**
  *  @fn mutex_create_dynamic()
