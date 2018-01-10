@@ -10,20 +10,6 @@
 
 #if(K_ENABLE_MESSAGING > 0)
 
-/* message control block structure */
-typedef struct kmsg{
-	uint8_t *data;
-	archtype_t items;
-	archtype_t slots_number;
-	archtype_t wr_ptr;
-	archtype_t rd_ptr;
-	archtype_t slot_size;
-	bool created;
-	k_work_list_t rd_threads_pending;
-	k_work_list_t wr_threads_pending;
-}kmsg_t;
-
-
 /* options for queue usage */
 typedef enum {
 	k_msg_block = 0,
@@ -31,35 +17,12 @@ typedef enum {
 }msg_opt_t;
 
 
+/* id type for message queue */
+typedef void*  msg_id_t; 
+
+
 /**
- *  @fn MESSAGE_BLOCK_DECLARE()
- *  @brief allocates memory and a fully initialized messaging block
- *
- *  @param name - name of initialized message structure this is the parameter used on message API
- *  @param noof_slots - number of elements of this message
- *  @param slot_size_val - size in bytes of this message slot
- *
- *  @return a fully initialized kmsg_t block ready to use
- */
-#define MESSAGE_BLOCK_DECLARE(name, noof_slots, slot_size_val)							\
-	static uint8_t data_##name[noof_slots * (slot_size_val + sizeof(archtype_t))] = {0};\
-	static kmsg_t name = {																\
-	  .data = &data_##name[0],  							                    		\
-	  .items = 0,                                         								\
-	  .slots_number = noof_slots,                         								\
-	  .wr_ptr = 0,                                        								\
-	  .rd_ptr = 0,                                        								\
-	  .slot_size = slot_size_val,					                 					\
-	  .wr_threads_pending.bitmap=0,														\
-	  .rd_threads_pending.bitmap=0,														\
-	  .created=false,																	\
-	}
-
-
-
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
-/**
- *  @fn message_create_dynamic()
+ *  @fn message_create()
  *  @brief creates a fully initialized message control block
  *
  *  @param noof_slots - number of elements of this message
@@ -67,20 +30,19 @@ typedef enum {
  *
  *  @return a ktimer_t control structure ready to use
  */
-kmsg_t * message_create_dynamic(uint32_t noof_slots, uint32_t slot_size_val);
+msg_id_t message_create(uint32_t noof_slots, uint32_t slot_size_val);
 
 
 /**
- *  @fn message_delete_dynamic()
+ *  @fn message_delete()
  *  @brief destroys a previous allocated message control block
  *
  *  @param msg - message to be destroyed
  *
  *  @return k_status_ok or error code in case of invalid use
  */
-k_status_t message_delete_dynamic(kmsg_t * msg);
+k_status_t message_delete(msg_id_t msg);
 
-#endif
 
 /**
  *  @fn message_insert()
@@ -93,7 +55,7 @@ k_status_t message_delete_dynamic(kmsg_t * msg);
  *
  *  @return k_status_ok or error for invalid values/queue full
  */
-k_status_t message_insert(kmsg_t *m, void *data, uint32_t size, msg_opt_t opt);
+k_status_t message_insert(msg_id_t *msg, void *data, uint32_t size, msg_opt_t opt);
 
 
 
@@ -109,8 +71,7 @@ k_status_t message_insert(kmsg_t *m, void *data, uint32_t size, msg_opt_t opt);
  *
  *  @return k_status_ok or error for invalid values/queue empty
  */
-k_status_t message_remove(kmsg_t *msg, void *data, uint32_t *size,bool peek, msg_opt_t opt);
-
+k_status_t message_remove(msg_id_t msg, void *data, uint32_t *size,bool peek, msg_opt_t opt);
 
 
 

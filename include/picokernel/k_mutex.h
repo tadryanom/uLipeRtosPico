@@ -11,60 +11,29 @@
 
 #if K_ENABLE_MUTEX > 0
 
-
-/** define mutex celing priority value */
-#define K_MUTEX_PRIO_CEIL_VAL	(K_PRIORITY_LEVELS - 8)
-
-
-
-/* semaphore control block structure */
-typedef struct kmutex{
-	bool created;
-	uint8_t owner_prio;
-	tcb_t *thr_owner;
-	k_work_list_t threads_pending;
-}kmutex_t;
+typedef void* mtx_id_t;
 
 
 /**
- *  @fn MUTEX_BLOCK_DECLARE()
- *  @brief declares a fully initialized mutex control block
- *
- *  @param name - name of mutex control structure created, it will used as parameter on mutex API
- *
- *  @return a kmutex_t control structure ready to use
- */
-#define MUTEX_BLOCK_DECLARE(name)							\
-	static kmutex_t name = {								\
-			.thr_owner=NULL,								\
-			.owner_prio=0,									\
-			.created=false,									\
-	}
-
-
-
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
-/**
- *  @fn mutex_create_dynamic()
+ *  @fn mutex_create()
  *  @brief creates a fully initialized mutex control block
  *
  *
  *  @return a kmutex_t control structure ready to use
  */
-kmutex_t * mutex_create_dynamic(void);
+mtx_id_t mutex_create(void);
 
 
 /**
- *  @fn mutex_delete_dynamic()
+ *  @fn mutex_delete()
  *  @brief destroys a previous allocated mutex control block
  *
  *  @param mutex - mutex to be destroyed
  *
  *  @return k_status_ok or error code in case of invalid use
  */
-k_status_t mutex_delete_dynamic(kmutex_t * mtx);
+k_status_t mutex_delete(mtx_id_t mtx);
 
-#endif
 
 /**
  *  @fn mutex_take()
@@ -75,7 +44,7 @@ k_status_t mutex_delete_dynamic(kmutex_t * mtx);
  *
  *  @return k_status_ok or error in case of invalid value/mutex not available
  */
-k_status_t mutex_take(kmutex_t *m, bool try);
+k_status_t mutex_take(mtx_id_t m, bool try);
 
 
 /**
@@ -86,7 +55,7 @@ k_status_t mutex_take(kmutex_t *m, bool try);
  *
  *  @return k_status_ok or error in case of invalid value
  */
-k_status_t mutex_give(kmutex_t *m);
+k_status_t mutex_give(mtx_id_t m);
 
 
 

@@ -23,44 +23,19 @@
 typedef void (*wqueue_handler_t) (void* work);
 
 
-/* work data structure */
-typedef struct wqueue_job {
-	wqueue_handler_t handler;
-	k_list_t node;
-}wqueue_job_t;
+/** workqueue id object */
+typedef void* wq_id_t;
 
-/* workqueue data structure */
-typedef struct wqueue {
-	tcb_t *thr;
-	k_list_t fifo;
-}wqueue_t;
-
-
-/**
- *  @fn WQUEUE_DECLARE()
- *  @brief this macro declares a initialized workqueue object, note the wqueue MUST initialized with
- *  	   wqueue_init in order to become usable even after this macro was called!
- *
- *  @param name - name of the wqueue control structure, is used as parameter to wqueue API
- *  @param priority - priority of the wqueue deferrable server ranged from 0 to 31
- *
- *  @return a wqueue_t control structure ready to use
- */
-#define WQUEUE_CONTROL_BLOCK_DECLARE(name, priority)							 \
-	THREAD_CONTROL_BLOCK_DECLARE(thread_##name, K_WQUEUES_STACK_SIZE, priority); \
-	wqueue_t name = {															 \
-		.thr = &thread_##name,													 \
-	}																			 \
 
 /**
  *  @fn wqueue_init()
  *  @brief initializes and starts the created workqueue deferrable server
  *
- *  @param wq - workqueue instance user wants to start, previously created
+ *  @param prio - workqueue instance user priority desired
  *
- *  @return k_status_ok or error code in case of invalid value
+ *  @return a wq_id_t containing the id of created workqueue
  */
-k_status_t wqueue_init(wqueue_t *wq);
+wq_id_t wqueue_init(uint8_t prio);
 
 
 
@@ -73,7 +48,7 @@ k_status_t wqueue_init(wqueue_t *wq);
  *
  *  @return k_status_ok or error code in case of invalid value
  */
-k_status_t wqueue_submit(wqueue_t *wq, wqueue_job_t *work);
+k_status_t wqueue_submit(wq_id_t wq, wqueue_job_t *work);
 
 
 #endif
