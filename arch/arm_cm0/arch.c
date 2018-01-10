@@ -8,10 +8,6 @@
  *
  */
 
-#include "ulipe_rtos_pico.h"
-#include "include/arch/k_port_m0_defs.h"
-
-#if(ARCH_TYPE_ARM_CM0 > 0)
 
 archtype_t *port_create_stack_frame(archtype_t *stack, thread_t thr_func, void *cookie)
 {
@@ -203,4 +199,3 @@ uint8_t port_bit_ls_scan(archtype_t arg)
 	return(31 - port_bit_fs_scan(arg & -arg));
 }
 
-#endif

@@ -12,8 +12,6 @@
 #define __K_THREAD_H
 
 
-
-
 /* define signals options */
 typedef enum {
 	k_wait_match_pattern = 0,
@@ -32,23 +30,24 @@ typedef enum {
 typedef void (*thread_t) (void *arg);
 
 
-#if (K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+/** thread id object  to use the thread control functions */
+typedef void* tid_t;
+
 
 /**
- *  @fn thread_create_dynamic()
- *  @brief obtains a full initialized thread control block ready to be created
+ *  @fn thread_create()
+ *  @brief obtains a full initialized thread control block ready to be started
  *
- *  @param name - name of thread control structure created, used as parameter to threads API
  *  @param stack_size_val - size of stack in archtype_t entries (not in bytes!)
  *  @param priority - priority of the thread after created range from 0 to 31
  *
  *  @return a tcb_t control structure ready to use
  */
-tcb_t *thread_create_dynamic(thread_t func, void *arg ,uint32_t stack_size, uint8_t priority);
+tid_t thread_create(uint32_t stack_size, uint8_t priority);
 
 
 /**
- *  @fn thread_abort_dynamic()
+ *  @fn thread_delete()
  *  @brief stops thread execution and make it not executable again (only using create) and delete the TCB
  *
  *  @param t - thread to be stopped, NULL or the thread itself is not allowed
@@ -59,14 +58,12 @@ tcb_t *thread_create_dynamic(thread_t func, void *arg ,uint32_t stack_size, uint
  *  		 calling of this function again will result in unexpected behavior!
  *
  */
-k_status_t thread_abort_dynamic(tcb_t *t);
-
-#endif
+k_status_t thread_delete(tid_t t);
 
 
 /**
- *  @fn thread_create()
- *  @brief installs a thread and put it on ready list
+ *  @fn thread_startd()
+ *  @brief begins thread execution when possible
  *
  *  @param func - thread entry point
  *  @param arg - custom argument to pass to the thread after its creation
@@ -74,18 +71,8 @@ k_status_t thread_abort_dynamic(tcb_t *t);
  *
  *  @return k_status_ok or error code in case of invalid value
  */
-k_status_t thread_create(thread_t func, void *arg,tcb_t *tcb);
+k_status_t thread_start(thread_t func, void *arg, tid_t t);
 
-
-/**
- *  @fn thread_abort()
- *  @brief stops thread execution and make it not executable again (only using create)
- *
- *  @param t - thread to be stopped, if NULL is passed the current thread is aborted
- *
- *  @return k_status_ok or error code in case of invalid value
- */
-k_status_t thread_abort(tcb_t *t);
 
 
 /**
@@ -100,7 +87,7 @@ k_status_t thread_abort(tcb_t *t);
  *        multiple times, the thread will be woken if resume is called once
  *
  */
-k_status_t thread_suspend(tcb_t *t);
+k_status_t thread_suspend(tid_t t);
 
 
 /**
@@ -112,7 +99,7 @@ k_status_t thread_suspend(tcb_t *t);
  *  @return k_status_ok or error code in case of invalid value
  *
  */
-k_status_t thread_resume(tcb_t *t);
+k_status_t thread_resume(tid_t t);
 
 
 /**
@@ -131,7 +118,7 @@ k_status_t thread_resume(tcb_t *t);
  *
  *  @return signals asserted if this task was woken
  */
-uint32_t thread_wait_signals(tcb_t *t, uint32_t signals, thread_signal_opt_t opt, k_status_t *err);
+uint32_t thread_wait_signals(tid_t t, uint32_t signals, thread_signal_opt_t opt, k_status_t *err);
 
 
 
@@ -144,7 +131,7 @@ uint32_t thread_wait_signals(tcb_t *t, uint32_t signals, thread_signal_opt_t opt
  *
  *  @return k_status_ok or error code in case of invalid value
  */
-k_status_t thread_set_signals(tcb_t *t, uint32_t signals);
+k_status_t thread_set_signals(tid_t t, uint32_t signals);
 
 /**
  *  @fn thread_clr_signals()
@@ -155,7 +142,7 @@ k_status_t thread_set_signals(tcb_t *t, uint32_t signals);
  *
  *  @return k_status_ok or error code in case of invalid value
  */
-k_status_t thread_clr_signals(tcb_t *t, uint32_t signals);
+k_status_t thread_clr_signals(tid_t t, uint32_t signals);
 
 
 /**
@@ -191,7 +178,7 @@ k_status_t thread_yield(void);
  *        of this function is suspended immediatelly and the changed priority
  *        thread is placed on execution
  */
-k_status_t thread_set_prio(tcb_t *t, uint8_t prio);
+k_status_t thread_set_prio(tid_t t, uint8_t prio);
 
 
 /**
@@ -202,7 +189,7 @@ k_status_t thread_set_prio(tcb_t *t, uint8_t prio);
  *
  *  @return tcb pointer to the current thread id
  */
-tcb_t *thread_get_current(void);
+tid_t thread_get_current(void);
 
 
 #endif

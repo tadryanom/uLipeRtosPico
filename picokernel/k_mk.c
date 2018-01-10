@@ -16,9 +16,10 @@
 
 /* add configuration */
 #include "../ulipe_rtos_pico.h"
+#include "../include/utils/k_list.h"
+
 
 /* internal kernel information */
-#include "include/k_list.h"
 #include "include/k_priv.h"
 #include "include/k_port.h"
 

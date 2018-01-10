@@ -8,11 +8,11 @@
  */
 
 /** public functions */
-k_status_t semaphore_take(ksema_t *s)
+k_status_t semaphore_take(sema_id_t s)
 {
 	k_status_t ret = k_status_ok;
 	bool reesched = false;
-	tcb_t *t = thread_get_current();
+	tcb_t *t = (tcb_t *)thread_get_current();
 	ULIPE_ASSERT(t != NULL);
 
 
@@ -20,6 +20,9 @@ k_status_t semaphore_take(ksema_t *s)
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
+
+	ksema_t *sem = (ksema_t *)s;
+
 
 	if(port_from_isr()){
 		/* take cannot be called from ISR */
@@ -29,14 +32,14 @@ k_status_t semaphore_take(ksema_t *s)
 
 	archtype_t key = port_irq_lock();
 
-	if(!s->created) {
+	if(!sem->created) {
 		/* handle first time usage */
-		k_work_list_init(&s->threads_pending);
-		s->created = true;
+		k_work_list_init(&sem->threads_pending);
+		sem->created = true;
 	}
 
 
-	if(!s->cnt) {
+	if(!sem->cnt) {
 		/*
 		 * if no key available, we need to insert the waiting thread
 		 * on semaphore pending list, when a key will become available
@@ -47,13 +50,13 @@ k_status_t semaphore_take(ksema_t *s)
 
 		t->thread_wait |= K_THR_PEND_SEMA;
 
-		ret = k_pend_obj(t, &s->threads_pending);
+		ret = k_pend_obj(t, &sem->threads_pending);
 		ULIPE_ASSERT(ret == k_status_ok);
 
 		reesched = true;
 	} else {
-		if(s->cnt > 0)
-			s->cnt--;
+		if(sem->cnt > 0)
+			sem->cnt--;
 	}
 
 
@@ -74,7 +77,7 @@ cleanup:
 }
 
 
-k_status_t semaphore_give(ksema_t *s, uint32_t count)
+k_status_t semaphore_give(sema_id_t s, uint32_t count)
 {
 	k_status_t ret = k_status_ok;
 	tcb_t *t = NULL;
@@ -131,10 +134,7 @@ cleanup:
 }
 
 
-
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
-
-ksema_t * semaphore_create_dynamic(uint32_t initial, uint32_t limit)
+sema_id_t semaphore_create(uint32_t initial, uint32_t limit)
 {
 	ksema_t *ret = (ksema_t*)k_malloc(sizeof(ksema_t));
 
@@ -144,17 +144,18 @@ ksema_t * semaphore_create_dynamic(uint32_t initial, uint32_t limit)
 		ret->created=false;
 	}
 
-	return(ret);
+	return((sema_id_t)ret);
 }
 
 
-k_status_t semaphore_delete_dynamic(ksema_t * sem)
+k_status_t semaphore_delete(sema_id_t sem)
 {
 	k_status_t ret = k_status_ok;
 
 	if(sem == NULL)
 		goto cleanup;
 
+	ksema_t *s = (ksema_t *)sem;
 	archtype_t key = port_irq_lock();
 
 	/*
@@ -162,7 +163,7 @@ k_status_t semaphore_delete_dynamic(ksema_t * sem)
 	 * returns a busy error to hint application to signal to all waiting
 	 * tasks
 	 */
-	if(sem->threads_pending.bitmap){
+	if(s->threads_pending.bitmap){
 		ret = k_sema_not_available;
 		port_irq_unlock(key);
 		goto cleanup;
@@ -178,4 +179,3 @@ cleanup:
 	return(ret);
 }
 
-#endif

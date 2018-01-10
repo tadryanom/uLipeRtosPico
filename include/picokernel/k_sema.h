@@ -11,11 +11,12 @@
 
 #if K_ENABLE_SEMAPHORE > 0
 
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+/** semaphore id type to use semaphore objects */
+typedef void* sema_id_t;
 
 
 /**
- *  @fn semaphore_create_dynamic()
+ *  @fn semaphore_create()
  *  @brief creates a fully initialized semaphore control block
  *
  *  @param name - name of sempahore block control structure, used as parameters on Semaphore API
@@ -24,25 +25,20 @@
  *
  *  @return a ksema_t control structure ready to use
  */
-ksema_t * semaphore_create_dynamic(uint32_t initial, uint32_t limit);
+sema_id_t semaphore_create_dynamic(uint32_t initial, uint32_t limit);
 
 
 /**
- *  @fn semaphore_delete_dynamic()
+ *  @fn semaphore_delete()
  *  @brief destroys a previous allocated semaphore control block
  *
  *  @param sem - semaphore to be destroyed
  *
  *  @return k_status_ok or error code in case of invalid use
  */
-k_status_t semaphore_delete_dynamic(ksema_t * sem);
+k_status_t semaphore_delete(sema_id_t sem);
 
 
-
-
-
-
-#endif
 
 /**
  *  @fn semaphore_take()
@@ -52,7 +48,7 @@ k_status_t semaphore_delete_dynamic(ksema_t * sem);
  *
  *  @return k_status_ok or error code in case of invalid value
  */
-k_status_t semaphore_take(ksema_t *s);
+k_status_t semaphore_take(sema_id_t s);
 
 
 /**
@@ -64,10 +60,7 @@ k_status_t semaphore_take(ksema_t *s);
  *
  *  @return k_status_ok or error code in case of invalid value
  */
-k_status_t semaphore_give(ksema_t *s, uint32_t count);
-
-
-
+k_status_t semaphore_give(sema_id_t s, uint32_t count);
 
 
 

@@ -18,7 +18,7 @@
 /* kernel debugging */
 #define K_DEBUG 						1
 /* architecture definition */
-#define ARCH_TYPE					"arm_cm0"
+#define ARCH_TYPE					    0
 
 
 #define K_SVC_MAX_PRIO					255
@@ -37,7 +37,6 @@
 #define K_ENABLE_TICKER					1
 #define K_ENABLE_TIMERS					1
 #define K_ENABLE_TIMER_GENERIC_SUPPORT	1
-#define K_ENABLE_MEMORY_POOLS			1
 #define K_ENABLE_MUTEX					1
 #define K_ENABLE_WORKQUEUES				1
 #define K_WQUEUES_STACK_SIZE 			128

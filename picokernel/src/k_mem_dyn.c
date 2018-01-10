@@ -47,11 +47,6 @@
  */
 
 
-#if (K_ENABLE_DYNAMIC_ALLOCATOR > 0)
-
-
-
-
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #define tlsf_assert(expr)
@@ -754,4 +749,3 @@ void k_free(void *mem)
     port_irq_unlock(key);
 }
 
-#endif

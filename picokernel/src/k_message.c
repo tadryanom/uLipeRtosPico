@@ -70,7 +70,7 @@ static k_status_t message_handle_pend(kmsg_t *m,bool insert, msg_opt_t opt, arch
 /** Public functions */
 
 
-k_status_t message_insert(kmsg_t *m, void *data, uint32_t size, msg_opt_t opt)
+k_status_t message_insert(msg_id_t m, void *data, uint32_t size, msg_opt_t opt)
 {
 	k_status_t ret = k_status_ok;
 	archtype_t key;
@@ -80,12 +80,15 @@ k_status_t message_insert(kmsg_t *m, void *data, uint32_t size, msg_opt_t opt)
 		goto cleanup;
 	}
 
+	kmsg_t *msg = (kmsg_t *)m;
+
+
 	if(data == NULL) {
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
 
-	if(size > m->slot_size) {
+	if(size > msg->slot_size) {
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
@@ -97,17 +100,17 @@ k_status_t message_insert(kmsg_t *m, void *data, uint32_t size, msg_opt_t opt)
 
 	key = port_irq_lock();
 
-	if(!m->created) {
-		m->created = true;
-		k_work_list_init(&m->wr_threads_pending);
-		k_work_list_init(&m->rd_threads_pending);
+	if(!msg->created) {
+		msg->created = true;
+		k_work_list_init(&msg->wr_threads_pending);
+		k_work_list_init(&msg->rd_threads_pending);
 	}
 
-	if(m->items >= m->slots_number) {
+	if(msg->items >= msg->slots_number) {
 		/* message queue is actually full,
 		 * so check the wait options passed by user
 		 */
-		ret = message_handle_pend(m,true, opt, key);
+		ret = message_handle_pend(msg,true, opt, key);
 
 		if(ret != k_status_ok) {
 			port_irq_unlock(key);
@@ -121,28 +124,19 @@ k_status_t message_insert(kmsg_t *m, void *data, uint32_t size, msg_opt_t opt)
 	/* regular use case, insert a new frame on message
 	 * queue and wake up a possible thread set
 	 */
-	archtype_t *ptr = (archtype_t *)&m->data[m->wr_ptr * (m->slot_size)];
+	archtype_t *ptr = (archtype_t *)&msg->data[msg->wr_ptr * (msg->slot_size)];
 	ULIPE_ASSERT(ptr != NULL);
 	*ptr++ = size;
 
-	if(size == sizeof(archtype_t)) {
-		/* special case to avoid copy and creates
-		 * a by reference queue support
-		 */
-		*ptr = *((archtype_t*)data);
+	/* just a ordinary copy */
+	memcpy(&msg->data[(msg->wr_ptr * (msg->slot_size)) + sizeof(archtype_t)], data, size);
 
-	} else {
-
-		/* just a ordinary copy */
-		memcpy(&m->data[(m->wr_ptr * (m->slot_size)) + sizeof(archtype_t)], data, size);
-	}
-
-	m->wr_ptr = (m->wr_ptr + 1) % m->slots_number;
-	m->items++;
+	msg->wr_ptr = (msg->wr_ptr + 1) % msg->slots_number;
+	msg->items++;
 
 
 
-	tcb_t *thr = k_unpend_obj(&m->rd_threads_pending);
+	tcb_t *thr = k_unpend_obj(&msg->rd_threads_pending);
 	if(thr == NULL) {
 		/* no need to reeschedule task list */
 		port_irq_unlock(key);
@@ -165,7 +159,7 @@ cleanup:
 
 
 
-k_status_t message_remove(kmsg_t *msg, void *data, uint32_t *size, bool peek, msg_opt_t opt)
+k_status_t message_remove(msg_id_t msg, void *data, uint32_t *size, bool peek, msg_opt_t opt)
 {
 	k_status_t ret = k_status_ok;
 	archtype_t key;
@@ -174,6 +168,8 @@ k_status_t message_remove(kmsg_t *msg, void *data, uint32_t *size, bool peek, ms
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
+
+	kmsg_t *m = (kmsg_t *)m;
 
 	if(data == NULL) {
 		ret = k_status_invalid_param;
@@ -187,19 +183,19 @@ k_status_t message_remove(kmsg_t *msg, void *data, uint32_t *size, bool peek, ms
 
 	key = port_irq_lock();
 
-	if(!msg->created) {
-		msg->created = true;
-		k_work_list_init(&msg->wr_threads_pending);
-		k_work_list_init(&msg->rd_threads_pending);
+	if(!m->created) {
+		m->created = true;
+		k_work_list_init(&m->wr_threads_pending);
+		k_work_list_init(&m->rd_threads_pending);
 	}
 
 
 
-	if(msg->items == 0) {
+	if(m->items == 0) {
 		/* message queue is actually empty,
 		 * so check the wait options passed by user
 		 */
-		ret = message_handle_pend(msg,false, opt,key);
+		ret = message_handle_pend(m,false, opt,key);
 
 		if(ret != k_status_ok) {
 			port_irq_unlock(key);
@@ -208,7 +204,7 @@ k_status_t message_remove(kmsg_t *msg, void *data, uint32_t *size, bool peek, ms
 
 	}
 
-	archtype_t *ptr = (archtype_t *)&msg->data[msg->rd_ptr * (msg->slot_size )];
+	archtype_t *ptr = (archtype_t *)&m->data[m->rd_ptr * (m->slot_size )];
 	ULIPE_ASSERT(ptr != NULL);
 	archtype_t data_size = *ptr++;
 
@@ -216,16 +212,9 @@ k_status_t message_remove(kmsg_t *msg, void *data, uint32_t *size, bool peek, ms
 	 * we have at least one slot pending for remotion, lets pick
 	 * it
 	 */
-	if(data_size == sizeof(archtype_t)) {
-		/* special case to avoid copy and creates
-		 * a by reference queue support
-		 */
-		*((archtype_t*)data) = *ptr;
-	} else {
 
-		/* just a ordinary copy */
-		memcpy(data, &msg->data[(msg->rd_ptr * msg->slot_size) + sizeof(archtype_t)  ], data_size);
-	}
+	/* just a ordinary copy */
+	memcpy(data, &m->data[(m->rd_ptr * m->slot_size) + sizeof(archtype_t)  ], data_size);
 	*size = data_size;
 
 
@@ -238,10 +227,10 @@ k_status_t message_remove(kmsg_t *msg, void *data, uint32_t *size, bool peek, ms
 		goto cleanup;
 	}
 
-	msg->rd_ptr = (msg->rd_ptr + 1) % msg->slots_number;
-	msg->items--;
+	m->rd_ptr = (m->rd_ptr + 1) % m->slots_number;
+	m->items--;
 
-	tcb_t *thr = k_unpend_obj(&msg->wr_threads_pending);
+	tcb_t *thr = k_unpend_obj(&m->wr_threads_pending);
 	if(thr == NULL) {
 		port_irq_unlock(key);
 		goto cleanup;
@@ -259,9 +248,8 @@ cleanup:
 }
 
 
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
 
-kmsg_t * message_create_dynamic(uint32_t noof_slots, uint32_t slot_size_val)
+msg_id_t message_create(uint32_t noof_slots, uint32_t slot_size_val)
 {
 
 	kmsg_t *ret = NULL;
@@ -303,11 +291,11 @@ kmsg_t * message_create_dynamic(uint32_t noof_slots, uint32_t slot_size_val)
 
 
 cleanup:
-	return(ret);
+	return((msg_id_t)ret);
 }
 
 
-k_status_t message_delete_dynamic(kmsg_t * msg)
+k_status_t message_delete(msg_id_t msg)
 {
 	k_status_t ret = k_status_ok;
 
@@ -316,27 +304,26 @@ k_status_t message_delete_dynamic(kmsg_t * msg)
 		goto cleanup;
 	}
 
+
+	kmsg_t* m = (kmsg_t *)msg;
 	archtype_t key = port_irq_lock();
 
 	/* cannot delete a message with waiting tasks
 	 */
-	if((msg->rd_threads_pending.bitmap) || (msg->wr_threads_pending.bitmap)) {
+	if((m->rd_threads_pending.bitmap) || (m->wr_threads_pending.bitmap)) {
 		ret = k_status_error;
 		port_irq_unlock(key);
 		goto cleanup;
 	}
 
 	/* release memory and exit */
-	k_free(msg->data);
-	k_free(msg);
+	k_free(m->data);
+	k_free(m);
 
 	port_irq_unlock(key);
 cleanup:
 	return(ret);
 }
-
-#endif
-
 
 
 #endif

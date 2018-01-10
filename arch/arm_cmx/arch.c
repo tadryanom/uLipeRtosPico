@@ -8,11 +8,6 @@
  *
  */
 
-#include "ulipe_rtos_pico.h"
-#include "include/arch/k_port_m3_4_7_defs.h"
-
-#if(ARCH_TYPE_ARM_CM3_4_7 > 0)
-
 
 archtype_t *port_create_stack_frame(archtype_t *stack, thread_t thr_func, void *cookie)
 {
@@ -138,11 +133,3 @@ extern void timer_ovf_handler(void)
 	kernel_irq_in();
 	kernel_irq_out();
 }
-
-
-#endif
-
-
-
-
-#endif

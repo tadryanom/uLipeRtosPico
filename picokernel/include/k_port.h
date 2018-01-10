@@ -18,7 +18,7 @@
  *
  *  @return key with the current interrupt state
  */
-extern archtype_t port_irq_lock(void);
+static archtype_t port_irq_lock(void);
 
 /**
  *  @fn port_irq_unlock()
@@ -28,7 +28,7 @@ extern archtype_t port_irq_lock(void);
  *
  *  @return none
  */
-extern void port_irq_unlock(archtype_t pattern);
+static void port_irq_unlock(archtype_t pattern);
 
 /**
  *  @fn port_from_isr()
@@ -38,7 +38,7 @@ extern void port_irq_unlock(archtype_t pattern);
  *
  *  @return true if current execution context is a ISR
  */
-extern bool port_from_isr(void);
+static  bool port_from_isr(void);
 
 
 /**
@@ -51,7 +51,7 @@ extern bool port_from_isr(void);
  *
  *  @return pointer to the modified stack filled with archtecture expected values
  */
-archtype_t *port_create_stack_frame(archtype_t *stack, thread_t thr_func, void *cookie);
+static archtype_t *port_create_stack_frame(archtype_t *stack, thread_t thr_func, void *cookie);
 
 
 /**
@@ -62,7 +62,7 @@ archtype_t *port_create_stack_frame(archtype_t *stack, thread_t thr_func, void *
  *
  *  @return	none
  */
-extern void port_swap_req(void);
+static  void port_swap_req(void);
 
 
 /**
@@ -75,7 +75,7 @@ extern void port_swap_req(void);
  *
  *  NOTE: This function should never returns!
  */
-extern void port_start_kernel(void);
+static void port_start_kernel(void);
 
 
 /**
@@ -86,7 +86,7 @@ extern void port_start_kernel(void);
  *
  *  @return none
  */
-extern void port_init_machine(void);
+static  void port_init_machine(void);
 
 
 /**
@@ -97,7 +97,7 @@ extern void port_init_machine(void);
  *
  *  @return value between 0 - 31
  */
-extern uint8_t port_bit_fs_scan(archtype_t reg);
+static uint8_t port_bit_fs_scan(archtype_t reg);
 
 /**
  *  @fn port_bit_ls_scan
@@ -107,7 +107,7 @@ extern uint8_t port_bit_fs_scan(archtype_t reg);
  *
  *  @return value between 0 - 31
  */
-extern uint8_t port_bit_ls_scan(archtype_t reg);
+static uint8_t port_bit_ls_scan(archtype_t reg);
 
 /**
  *  @fn port_set_break
@@ -118,7 +118,7 @@ extern uint8_t port_bit_ls_scan(archtype_t reg);
  *  @return none
  */
 #if K_DEBUG > 0
-extern void port_set_break(void);
+static void port_set_break(void);
 #endif
 
 /************* Specific low power port **********************************/
@@ -132,7 +132,7 @@ extern void port_set_break(void);
  *
  *  @return none
  */
-extern void port_low_power_engine(k_wakeup_info_t *info);
+static void port_low_power_engine(k_wakeup_info_t *info);
 #endif
 
 
@@ -144,7 +144,7 @@ extern void port_low_power_engine(k_wakeup_info_t *info);
  *  @param
  *  @return
  */
-extern void port_start_timer(uint32_t reload_val);
+static void port_start_timer(uint32_t reload_val);
 
 
 /**
@@ -153,7 +153,7 @@ extern void port_start_timer(uint32_t reload_val);
  *  @param
  *  @return
  */
-extern void port_timer_load_append(uint32_t append_val);
+static void port_timer_load_append(uint32_t append_val);
 
 
 /**
@@ -162,7 +162,7 @@ extern void port_timer_load_append(uint32_t append_val);
  *  @param
  *  @return
  */
-extern uint32_t port_timer_halt(void);
+static uint32_t port_timer_halt(void);
 
 
 /**
@@ -171,7 +171,7 @@ extern uint32_t port_timer_halt(void);
  *  @param
  *  @return
  */
-extern void port_timer_resume(void);
+static void port_timer_resume(void);
 
 /**
  *  @fn timer_match_handler()
@@ -179,7 +179,7 @@ extern void port_timer_resume(void);
  *  @param
  *  @return
  */
-extern void timer_match_handler(void);
+static void timer_match_handler(void);
 
 
 /**
@@ -188,7 +188,7 @@ extern void timer_match_handler(void);
  *  @param
  *  @return
  */
-extern void timer_ovf_handler(void);
+static void timer_ovf_handler(void);
 
 #if(K_ENABLE_TICKLESS_IDLE > 0)
 /**
@@ -197,7 +197,7 @@ extern void timer_ovf_handler(void);
  *  @param
  *  @return
  */
-extern void port_start_ticker(uint32_t reload_val);
+static void port_start_ticker(uint32_t reload_val);
 
 
 /**
@@ -206,10 +206,8 @@ extern void port_start_ticker(uint32_t reload_val);
  *  @param
  *  @return
  */
-extern uint32_t port_halt_ticker(void);
-
+static uint32_t port_halt_ticker(void);
 
 
 #endif
-
 #endif

@@ -7,28 +7,29 @@
  *
  */
 
-THREAD_CONTROL_BLOCK_DECLARE(idle_thread, 64, 0);
-THREAD_CONTROL_BLOCK_DECLARE(timer_tcb, K_TIMER_DISPATCHER_STACK_SIZE, K_TIMER_DISPATCHER_PRIORITY);
+static tid_t idle_thread;
+
+/* current and highest priority tasks obtained from scheduler */
 static tcb_t *k_current_task;
 static tcb_t *k_high_prio_task;
 
 static k_work_list_t k_rdy_list;
-static k_list_t k_timed_list;
 static k_work_list_t waiting_to_delete_list;
+static k_list_t k_timed_list;
+
 
 static bool k_configured;
-static archtype_t irq_counter;
+static uint32_t irq_counter;
 uint32_t irq_lock_nest;
 
-/** public variables **/
+
 static bool k_running = false;
 static archtype_t irq_nesting = 0;
-
+static k_wakeup_info_t wu_info;
 
 
 #if((K_ENABLE_TICKER > 0) || (K_ENABLE_TIMERS > 0))
-extern tcb_t timer_tcb;
-extern void timer_dispatcher(void *args);
+static tid_t timer_tcb;
 #endif
 
 /** private functions **/
@@ -391,7 +392,7 @@ k_status_t kernel_init(void)
 
 	archtype_t key = port_irq_lock();
 
-	/* no priority ready */
+	/* no priority ready and no tasks waiting*/
 	k_work_list_init(&k_rdy_list);
 
 	/* init timed list */
@@ -406,25 +407,26 @@ k_status_t kernel_init(void)
 
 	port_irq_unlock(key);
 
-	extern tcb_t *next_task_wake;
-	extern uint32_t tick_count;
-	extern ktimer_t *actual_timer;
-
 
 	/* creates the idle thread */
-	k_status_t err = thread_create(&k_idle_thread,&wu_info, &idle_thread);
+	idle_thread = thread_create(64, 0);
+	ULIPE_ASSERT(idle_thread != NULL);
+	k_status_t err = thread_start(&k_idle_thread, &wu_info, idle_thread);
 	ULIPE_ASSERT(err == k_status_ok);
 
+	
 #if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
 	extern void k_heap_init(void);
 	k_heap_init();
 #endif
 
-	k_make_not_ready(&idle_thread);
-	idle_thread.thread_prio = K_IDLE_THREAD_PRIO;
+	k_make_not_ready((tcb_t *)idle_thread);
+	((tcb_t *)(idle_thread))->thread_prio = K_IDLE_THREAD_PRIO;
 
 #if(K_ENABLE_TICKER > 0)
-	err = thread_create(&timer_dispatcher,NULL, &timer_tcb);
+	timer_tcb = thread_create(K_TIMER_DISPATCHER_STACK_SIZE,K_TIMER_DISPATCHER_PRIORITY);
+	ULIPE_ASSERT(timer_tcb != NULL);
+	err = thread_start(&timer_dispatcher, NULL, timer_tcb);
 	ULIPE_ASSERT(err == k_status_ok);
 #endif
 
@@ -455,6 +457,7 @@ cleanup:
 	return(k_status_error);
 }
 
+
 void kernel_irq_in(void)
 {
 
@@ -478,10 +481,6 @@ void kernel_irq_in(void)
 
 	if(irq_counter < (archtype_t)0xFFFFFFFF)
 		irq_counter++;
-
-	if(irq_lock_nest < (archtype_t)0xFFFFFFFF)
-		irq_lock_nest++;
-
 }
 
 void kernel_irq_out(void)
@@ -501,9 +500,6 @@ void kernel_irq_out(void)
 
 	if(!port_from_isr())
 		return;
-
-	if(irq_lock_nest > (archtype_t)0)
-		irq_lock_nest--;
 
 
 	if(irq_counter > (archtype_t)0) {

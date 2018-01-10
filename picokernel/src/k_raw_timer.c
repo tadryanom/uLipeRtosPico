@@ -19,16 +19,16 @@ static k_list_t k_timed_list = SYS_DLIST_STATIC_INIT(&k_timed_list);
 static archtype_t k_elapsed_time = 0;
 static bool no_timers = true;
 #else
-ktimer_t *actual_timer;
+static ktimer_t *actual_timer;
 #endif
 
 #endif
 
-uint32_t tick_count = 0;
+static uint32_t tick_count = 0;
 static tcb_t * next_task_wake = NULL;
 static k_list_t k_ticker_list = SYS_DLIST_STATIC_INIT(&k_ticker_list);
 
-static k_wakeup_info_t wu_info;
+
 
 
 
@@ -179,7 +179,7 @@ static void timer_rebuild_timeline(ktimer_t *t, archtype_t *key)
  *  @param
  *  @return
  */
-void timer_dispatcher(void *args)
+static void timer_dispatcher(void *args)
 {
 	(void)args;
 	k_status_t err;

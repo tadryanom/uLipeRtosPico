@@ -11,28 +11,29 @@
 
 #if K_ENABLE_MUTEX > 0
 
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+typedef void* mtx_id_t;
+
+
 /**
- *  @fn mutex_create_dynamic()
+ *  @fn mutex_create()
  *  @brief creates a fully initialized mutex control block
  *
  *
  *  @return a kmutex_t control structure ready to use
  */
-kmutex_t * mutex_create_dynamic(void);
+mtx_id_t mutex_create(void);
 
 
 /**
- *  @fn mutex_delete_dynamic()
+ *  @fn mutex_delete()
  *  @brief destroys a previous allocated mutex control block
  *
  *  @param mutex - mutex to be destroyed
  *
  *  @return k_status_ok or error code in case of invalid use
  */
-k_status_t mutex_delete_dynamic(kmutex_t * mtx);
+k_status_t mutex_delete(mtx_id_t mtx);
 
-#endif
 
 /**
  *  @fn mutex_take()
@@ -43,7 +44,7 @@ k_status_t mutex_delete_dynamic(kmutex_t * mtx);
  *
  *  @return k_status_ok or error in case of invalid value/mutex not available
  */
-k_status_t mutex_take(kmutex_t *m, bool try);
+k_status_t mutex_take(mtx_id_t m, bool try);
 
 
 /**
@@ -54,7 +55,7 @@ k_status_t mutex_take(kmutex_t *m, bool try);
  *
  *  @return k_status_ok or error in case of invalid value
  */
-k_status_t mutex_give(kmutex_t *m);
+k_status_t mutex_give(mtx_id_t m);
 
 
 

@@ -17,9 +17,12 @@ typedef enum {
 }msg_opt_t;
 
 
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
+/* id type for message queue */
+typedef void*  msg_id_t; 
+
+
 /**
- *  @fn message_create_dynamic()
+ *  @fn message_create()
  *  @brief creates a fully initialized message control block
  *
  *  @param noof_slots - number of elements of this message
@@ -27,20 +30,19 @@ typedef enum {
  *
  *  @return a ktimer_t control structure ready to use
  */
-kmsg_t * message_create_dynamic(uint32_t noof_slots, uint32_t slot_size_val);
+msg_id_t message_create(uint32_t noof_slots, uint32_t slot_size_val);
 
 
 /**
- *  @fn message_delete_dynamic()
+ *  @fn message_delete()
  *  @brief destroys a previous allocated message control block
  *
  *  @param msg - message to be destroyed
  *
  *  @return k_status_ok or error code in case of invalid use
  */
-k_status_t message_delete_dynamic(kmsg_t * msg);
+k_status_t message_delete(msg_id_t msg);
 
-#endif
 
 /**
  *  @fn message_insert()
@@ -53,7 +55,7 @@ k_status_t message_delete_dynamic(kmsg_t * msg);
  *
  *  @return k_status_ok or error for invalid values/queue full
  */
-k_status_t message_insert(kmsg_t *m, void *data, uint32_t size, msg_opt_t opt);
+k_status_t message_insert(msg_id_t *msg, void *data, uint32_t size, msg_opt_t opt);
 
 
 
@@ -69,8 +71,7 @@ k_status_t message_insert(kmsg_t *m, void *data, uint32_t size, msg_opt_t opt);
  *
  *  @return k_status_ok or error for invalid values/queue empty
  */
-k_status_t message_remove(kmsg_t *msg, void *data, uint32_t *size,bool peek, msg_opt_t opt);
-
+k_status_t message_remove(msg_id_t msg, void *data, uint32_t *size,bool peek, msg_opt_t opt);
 
 
 

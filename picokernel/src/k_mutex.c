@@ -6,18 +6,18 @@
  *  @brief mutual exclusion semaphore stuff
  *
  */
-#include "ulipe_rtos_pico.h"
 
+ #if(K_ENABLE_MUTEX > 0)
 
 /** internal functions */
 
 
 /** public functions */
-k_status_t mutex_take(kmutex_t *m, bool try)
+k_status_t mutex_take(mtx_id_t m, bool try)
 {
 	k_status_t ret = k_status_ok;
 	bool reesched = false;
-	tcb_t *t = thread_get_current();
+	tcb_t *t = (tcb_t *)thread_get_current();
 	ULIPE_ASSERT(t != NULL);
 
 
@@ -32,21 +32,23 @@ k_status_t mutex_take(kmutex_t *m, bool try)
 		goto cleanup;
 	}
 
+	kmutex_t *mt = (kmutex_t *)m;
 	archtype_t key = port_irq_lock();
 
-	if(!m->created) {
+
+	if(!mt->created) {
 		/* handle first time usage */
-		k_work_list_init(&m->threads_pending);
-		m->created = true;
+		k_work_list_init(&mt->threads_pending);
+		mt->created = true;
 	}
 
 
-	if(m->thr_owner == NULL && (try)) {
+	if(mt->thr_owner == NULL && (try)) {
 		port_irq_unlock(key);
 		goto cleanup;
 	}
 
-	if(m->thr_owner != NULL ) {
+	if(mt->thr_owner != NULL ) {
 		/*
 		 * if no key available, we need to insert the waiting thread
 		 * on mutex pending list, when a key will become available
@@ -56,7 +58,7 @@ k_status_t mutex_take(kmutex_t *m, bool try)
 		ret = k_make_not_ready(t);
 		ULIPE_ASSERT(ret == k_status_ok);
 		t->thread_wait |= K_THR_PEND_MTX;
-		ret = k_pend_obj(t, &m->threads_pending);
+		ret = k_pend_obj(t, &mt->threads_pending);
 		ULIPE_ASSERT(ret == k_status_ok);
 
 		/* but in mutex case, if the owner has a priority
@@ -66,9 +68,9 @@ k_status_t mutex_take(kmutex_t *m, bool try)
 
 	} else {
 
-		m->thr_owner = t;
-		m->owner_prio = t->thread_prio;
-		thread_set_prio(t, K_MUTEX_PRIO_CEIL_VAL);
+		mt->thr_owner = t;
+		mt->owner_prio = t->thread_prio;
+		thread_set_prio((tid_t)t, K_MUTEX_PRIO_CEIL_VAL);
 	}
 
 
@@ -108,24 +110,26 @@ k_status_t mutex_give(kmutex_t *m)
 		goto cleanup;
 	}
 
+	kmutex_t *mt = (kmutex_t *)m;
 
-	if(cur != m->thr_owner) {
+
+	if(cur != mt->thr_owner) {
 		/* only the mutex owner can release it */
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
 
-	if(m->thr_owner == NULL) {
+	if(mt->thr_owner == NULL) {
 		ret = k_mutex_already_available;
 		goto cleanup;
 
 	}
 
 	archtype_t key = port_irq_lock();
-	if(!m->created) {
+	if(!mt->created) {
 		/* handle first time usage */
-		k_work_list_init(&m->threads_pending);
-		m->created = true;
+		k_work_list_init(&mt->threads_pending);
+		mt->created = true;
 	}
 
 	/* restore thread original priority */
@@ -135,33 +139,31 @@ k_status_t mutex_give(kmutex_t *m)
 	 * we need to verify if a new highprio task is available to
 	 * run
 	 */
-	t = k_unpend_obj(&m->threads_pending);
+	t = k_unpend_obj(&mt->threads_pending);
 	if(t == NULL) {
 		/* no tasks pendings, just get out here */
-		uint8_t tmp = m->owner_prio;
-		m->owner_prio = 0;
-		m->thr_owner  = NULL;
+		uint8_t tmp = mt->owner_prio;
+		mt->owner_prio = 0;
+		mt->thr_owner  = NULL;
 
 		/* restore thread original priority */
-		thread_set_prio(cur, tmp);
+		thread_set_prio((tid_t)cur, tmp);
 
 		port_irq_unlock(key);
 		goto cleanup;
 	} else {
-		uint8_t tmp = m->owner_prio;
-		m->thr_owner = t;
-		m->owner_prio = t->thread_prio;
+		uint8_t tmp = mt->owner_prio;
+		mt->thr_owner = t;
+		mt->owner_prio = t->thread_prio;
 		t->thread_wait &= ~(K_THR_PEND_MTX);
 
 		ret = k_make_ready(t);
 		ULIPE_ASSERT(ret == k_status_ok);
 		/*restore last owner original prio */
-		thread_set_prio(cur, tmp);
+		thread_set_prio((tid_t)cur, tmp);
 
 
 		port_irq_unlock(key);
-
-
 		k_sched_and_swap();
 	}
 
@@ -171,9 +173,7 @@ cleanup:
 }
 
 
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
-
-kmutex_t * mutex_create_dynamic(void)
+mtx_id_t mutex_create(void)
 {
 	kmutex_t *ret = (kmutex_t*)k_malloc(sizeof(kmutex_t));
 
@@ -183,13 +183,14 @@ kmutex_t * mutex_create_dynamic(void)
 		ret->created=false;
 	}
 
-	return(ret);
+	return((mtx_id_t)ret);
 }
 
 
-k_status_t mutex_delete_dynamic(kmutex_t * mtx)
+k_status_t mutex_delete(mtx_id_t mtx)
 {
 	k_status_t ret = k_status_ok;
+	kmutex_t *m = (kmutex_t *)mtx;
 
 	if(mtx == NULL)
 		goto cleanup;
@@ -201,14 +202,14 @@ k_status_t mutex_delete_dynamic(kmutex_t * mtx)
 	 * returns a busy error to hint application to signal to all waiting
 	 * tasks
 	 */
-	if(mtx->threads_pending.bitmap){
+	if(m->threads_pending.bitmap){
 		ret = k_status_error;
 		port_irq_unlock(key);
 		goto cleanup;
 	}
 
 	/* release the memory */
-	k_free(mtx);
+	k_free(m);
 
 
 	port_irq_unlock(key);
@@ -218,4 +219,3 @@ cleanup:
 }
 
 #endif
-

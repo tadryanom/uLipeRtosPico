@@ -7,14 +7,8 @@
  *
  *
  */
-
-#include "ulipe_rtos_pico.h"
-#include "include/arch/k_port_avr_tiny_defs.h"
-
-#if(ARCH_TYPE_AVR_TINY > 0)
 #include <avr/io.h>
 #include <avr/interrupt.h>
-
 
 
 archtype_t *port_create_stack_frame(archtype_t *stack, thread_t thr_func, void *cookie)
@@ -245,8 +239,3 @@ uint8_t port_bit_ls_scan(archtype_t arg)
 	/* ctz is not as well */
 	return(31 - port_bit_fs_scan(arg & -arg));
 }
-
-
-
-#endif
-

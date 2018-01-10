@@ -10,7 +10,6 @@
 #ifndef __K_MEM_DYN_H
 #define __K_MEM_DYN_H
 
-#if (K_ENABLE_DYNAMIC_ALLOCATOR > 0)
 
 /**
  *  @fn k_malloc()
@@ -33,6 +32,4 @@ void *k_malloc(size_t size);
  */
 void k_free(void *p);
 
-
-#endif
-#endif /* OSMEM_H_ */
+#endif 

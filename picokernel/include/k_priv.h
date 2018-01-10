@@ -13,22 +13,22 @@
 
 
 /* kernel always will have this priority level */
-#define K_PRIORITY_LEVELS	 	 32
-#define K_SYS_THREAD_PRIO   	 	 31
-#define K_IDLE_THREAD_PRIO		 0xFF
+#define K_PRIORITY_LEVELS	 	 	32
+#define K_SYS_THREAD_PRIO   	 	31
+#define K_IDLE_THREAD_PRIO		 	0xFF
 
 
 /* define the stask status, not used in user application*/
-#define K_THR_SUSPENDED  			(0x01)
-#define K_THR_PEND_SEMA  			(0x02)
-#define K_THR_PEND_MSG	 			(0x04)
-#define K_THR_PEND_TMR	 			(0x08)
+#define K_THR_SUSPENDED  				(0x01)
+#define K_THR_PEND_SEMA  				(0x02)
+#define K_THR_PEND_MSG	 				(0x04)
+#define K_THR_PEND_TMR	 				(0x08)
 #define K_THR_PEND_SIGNAL_ALL 			(0x10)
 #define K_THR_PEND_SIGNAL_ANY 			(0x20)
 #define K_THR_PEND_SIGNAL_ALL_C 		(0x40)
 #define K_THR_PEND_SIGNAL_ANY_C 		(0x80)
-#define K_THR_PEND_TICKER	 		(0x100)
-#define K_THR_PEND_MTX		 		(0x200)
+#define K_THR_PEND_TICKER	 			(0x100)
+#define K_THR_PEND_MTX		 			(0x200)
 
 
 /* timer commands, not used for user application  */
@@ -149,5 +149,12 @@ typedef struct {
 	uint16_t numblocks;
 	void *mem_pool;
 }pool_info_t;
+
+
+/* forward declaration to internal functions used by kernel */
+#if((K_ENABLE_TICKER > 0) || (K_ENABLE_TIMERS > 0))
+static void timer_dispatcher(void *args);
+#endif
+static void k_idle_thread(void *args);
 
 #endif

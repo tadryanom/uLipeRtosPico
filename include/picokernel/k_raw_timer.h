@@ -13,6 +13,11 @@
 #if(K_ENABLE_TICKER > 0)
 #if(K_ENABLE_TIMERS > 0)
 
+
+/** timer id typed */
+typedef void* timer_id_t;
+
+
 /**
  * timer callback function type
  *
@@ -25,28 +30,25 @@
 typedef void (*ktimer_callback_t) (void * user_data, void *timer);
 
 
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
 /**
- *  @fn timer_create_dynamic()
+ *  @fn timer_create()
  *  @brief creates a fully initialized timer control block
  *  @param load_value - initial load value (can be changed using timer API)
  *
  *  @return a ktimer_t control structure ready to use
  */
-ktimer_t * timer_create_dynamic(uint32_t load_value);
+timer_id_t timer_create_dynamic(uint32_t load_value);
 
 
 /**
- *  @fn timer_delete_dynamic()
+ *  @fn timer_delete()
  *  @brief destroys a previous allocated timer control block
  *
  *  @param tim - timer to be destroyed
  *
  *  @return k_status_ok or error code in case of invalid use
  */
-k_status_t timer_delete_dynamic(ktimer_t * tim);
-
-#endif
+k_status_t timer_delete_dynamic(timer_id_t tim);
 
 
 /**
@@ -58,7 +60,7 @@ k_status_t timer_delete_dynamic(ktimer_t * tim);
  *  @return k_status_ok or error in case of invalid values
  *
  */
-k_status_t timer_start(ktimer_t *t);
+k_status_t timer_start(timer_id_t t);
 
 
 /**
@@ -69,7 +71,7 @@ k_status_t timer_start(ktimer_t *t);
  *
  *  @return k_status_ok or error in case of invalid values
  */
-k_status_t timer_stop(ktimer_t *t);
+k_status_t timer_stop(timer_id_t t);
 
 
 /**
@@ -80,7 +82,7 @@ k_status_t timer_stop(ktimer_t *t);
  *
  *  @return k_status_ok or error in case of invalid values
  */
-k_status_t timer_poll(ktimer_t *t);
+k_status_t timer_poll(timer_id_t t);
 
 
 /**
@@ -93,7 +95,7 @@ k_status_t timer_poll(ktimer_t *t);
  *
  *  @return k_status_ok or error in case of invalid values / timmer already running
  */
-k_status_t timer_set_callback(ktimer_t *t, ktimer_callback_t cb, void *user_data);
+k_status_t timer_set_callback(timer_id_t t, ktimer_callback_t cb, void *user_data);
 
 /**
  *  @fn timer_set_load()
@@ -104,7 +106,7 @@ k_status_t timer_set_callback(ktimer_t *t, ktimer_callback_t cb, void *user_data
  *
  *  @return k_status_ok or error in case of invalid values / timmer already running
  */
-k_status_t timer_set_load(ktimer_t *t, uint32_t load_val);
+k_status_t timer_set_load(timer_id_t t, uint32_t load_val);
 #endif
 
 
@@ -128,8 +130,6 @@ k_status_t ticker_timer_wait(uint32_t ticks);
  *  @return current tick count value
  */
 uint32_t timer_get_tick_count(void);
-
-
 
 
 #endif
