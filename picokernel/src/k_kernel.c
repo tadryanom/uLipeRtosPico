@@ -7,6 +7,7 @@
  *
  */
 
+/* idle thread control block */ 
 static tid_t idle_thread;
 
 /* current and highest priority tasks obtained from scheduler */
@@ -14,9 +15,8 @@ static tcb_t *k_current_task;
 static tcb_t *k_high_prio_task;
 
 static k_work_list_t k_rdy_list;
-static k_work_list_t waiting_to_delete_list;
+static k_list_t waiting_to_delete_list;
 static k_list_t k_timed_list;
-
 
 static bool k_configured;
 static uint32_t irq_counter;
@@ -33,56 +33,6 @@ static tid_t timer_tcb;
 #endif
 
 /** private functions **/
-
-
-
-/**
- *  @fn k_idle_thread()
- *  @brief idle thread to be executed when no other thread are ready to run
- *  @param
- *  @return
- */
-static void k_idle_thread(void *kernel_info)
-{
-
-	for(;;) {
-#if (K_ENABLE_TICKLESS_IDLE > 0)
-		/* kernel can sleep ? */
-		if((wu_info.next_thread_wake == NULL) && (wu_info.next_timer == NULL)) {
-			/* simplest case, we need only to enter in sleep for user defined time
-			 * the tasks sleep for defined time is future implementation
-			 */
-			port_low_power_engine(&wu_info);
-		} else if ((wu_info.next_thread_wake == NULL) && (wu_info.next_timer != NULL)) {
-
-			/* we have a next timer to expire, time to sleep? */
-			if((wu_info.next_timer->load_val - *wu_info.tick_cntr) > K_MAX_LOW_POWER_PERIOD) {
-				port_low_power_engine(&wu_info);
-			}
-		} else if ((wu_info.next_thread_wake != NULL) && (wu_info.next_timer == NULL)) {
-
-			/* we have a next timer to expire, time to sleep? */
-			if((wu_info.next_thread_wake->wake_tick - *wu_info.tick_cntr) > K_MAX_LOW_POWER_PERIOD) {
-				port_low_power_engine(&wu_info);
-			}
-
-		} 	else if((wu_info.next_thread_wake != NULL) && (wu_info.next_timer != NULL)) {
-
-			uint32_t thread_tick_step = wu_info.next_thread_wake->wake_tick - *wu_info.tick_cntr;
-			uint32_t timer_tick_step = wu_info.next_timer->load_val - *wu_info.tick_cntr;
-
-			/* both timers needs to allow us to enter in sleep mode */
-			if((thread_tick_step >= K_MAX_LOW_POWER_PERIOD) && (timer_tick_step >= K_MAX_LOW_POWER_PERIOD) ) {
-				port_low_power_engine(&wu_info);
-			}
-		}
-
-#else
-		(void)info;
-#endif
-	}
-}
-
 /**
  *  @fn k_sched()
  *  @brief gets the highest priority and most recet task to run

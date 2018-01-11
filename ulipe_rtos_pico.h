@@ -18,6 +18,10 @@
 #include <string.h>
 #include "ulipe_rtos_kconfig.h"
 
+#ifndef __ARCH_SUPPORTED_H
+	#error "Fatal: where the arch supported list file? "
+#endif	
+
 #ifndef __ULIPE_RTOS_KCONFIG_H
 	#error "No config file found, loading default setings"
 #endif
@@ -83,18 +87,8 @@ typedef uint64_t archtype_t;
 #else
 #endif
 
-
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
-//#error "FATAL: Dynamic allocator is under development, please use memory pool instead!"
 #ifndef K_HEAP_SIZE
 #define K_HEAP_SIZE 1024
-#endif
-#endif
-
-#if(K_ENABLE_WORKQUEUES > 0)
-#ifndef K_WQUEUES_STACK_SIZE
-#define K_WQUEUES_STACK_SIZE 128
-#endif
 #endif
 
 #if(K_ENABLE_TICKLESS_IDLE > 0)
@@ -113,10 +107,7 @@ extern void user_lowpower_exit(void *arg);
 #include "include/picokernel/k_raw_timer.h"
 #include "include/picokernel/k_sema.h"
 #include "include/picokernel/k_mutex.h"
-#include "include/picokernel/k_memp.h"
-#include "include/picokernel/k_mem_dyn.h"
-#include "include/picokernel/k_wqueue.h"
-#include "include/picokernel/k_port.h"
+#include "include/picokernel/k_malloc.h"
 
 
 /** assertion mechanism */
