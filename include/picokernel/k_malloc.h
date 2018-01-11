@@ -1,14 +1,14 @@
 /**
  * 							ULIPE RTOS PICO
  *
- *  @file k_mem_dyn.h
+ *  @file k_malloc.h
  *
  *  @brief dynamic memory block allocator based on TLSF strategy
  *
  *
  */
-#ifndef __K_MEM_DYN_H
-#define __K_MEM_DYN_H
+#ifndef __K_MALLOC_H
+#define __K_MALLOC_H
 
 
 /**

@@ -31,9 +31,7 @@
 #include "src/k_raw_timer.c"
 #include "src/k_sema.c"
 #include "src/k_mutex.c"
-#include "src/k_memp.c"
-#include "src/k_mem_dyn.c"
-#include "src/k_wqueue.c"
+#include "src/k_malloc.c"
 #include "../arch/arch_mk.c"
 
 #endif
