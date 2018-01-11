@@ -5,9 +5,8 @@ The kernel uses a fully preemptive-cooperative schedule policy, and supports up 
 
 # Low memory footprint:
   - 2.0KB of code with full modules enabled*; 
-  - 80B of RAM data used by the kernel;	
-  - fully static allocation of kernel objects less than 40 bytes per one(user controls ram usage during compile time);
-
+  - 80B of RAM data used by the kernel + 480B used by heap mechanism;	
+  
   *built on GCC_ARM 5.2 with -Os option
   
 # Main Features
@@ -33,7 +32,7 @@ The kernel uses a fully preemptive-cooperative schedule policy, and supports up 
 # Recommended processor resources
 
 - 3KB of Code targeted memory(ROM);
-- 1024B of Data memory (RAM);
+- 1KB of Data memory (RAM);
 
 # Basic Usage
 
