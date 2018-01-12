@@ -51,7 +51,7 @@ static  bool port_from_isr(void);
  *
  *  @return pointer to the modified stack filled with archtecture expected values
  */
-static archtype_t *port_create_stack_frame(archtype_t *stack, thread_t thr_func, void *cookie);
+static archtype_t *port_create_stack_frame(archtype_t *stack, thread_t thr_func, void *arg);
 
 
 /**

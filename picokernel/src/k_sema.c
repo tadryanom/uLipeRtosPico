@@ -30,7 +30,7 @@ k_status_t semaphore_take(sema_id_t s)
 		goto cleanup;
 	}
 
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
 
 	if(!sem->created) {
 		/* handle first time usage */
@@ -61,11 +61,11 @@ k_status_t semaphore_take(sema_id_t s)
 
 
 	if(!reesched){
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
-	port_irq_unlock(key);
+	k_sched_unlock();
 	/*
 	 * if current thread entered on pending state, we need to reesched the
 	 * thread set and find a new thread to execute, otherwise, dispatch idle
@@ -92,7 +92,8 @@ k_status_t semaphore_give(sema_id_t s, uint32_t count)
 		goto cleanup;
 	}
 
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
+
 	if(!s->created) {
 		/* handle first time usage */
 		k_work_list_init(&s->threads_pending);
@@ -112,7 +113,7 @@ k_status_t semaphore_give(sema_id_t s, uint32_t count)
 	t = k_unpend_obj(&s->threads_pending);
 	if(t == NULL) {
 		/* no tasks pendings, just get out here */
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	} else {
 
@@ -124,9 +125,8 @@ k_status_t semaphore_give(sema_id_t s, uint32_t count)
 
 	ret = k_make_ready(t);
 	ULIPE_ASSERT(ret == k_status_ok);
-	port_irq_unlock(key);
-
-
+	k_sched_unlock();
+	
 	k_sched_and_swap();
 
 cleanup:
@@ -156,7 +156,8 @@ k_status_t semaphore_delete(sema_id_t sem)
 		goto cleanup;
 
 	ksema_t *s = (ksema_t *)sem;
-	archtype_t key = port_irq_lock();
+
+	k_sched_lock();
 
 	/*
 	 * Semaphores only can be deleted if no tasks are pending, otherwise
@@ -165,16 +166,14 @@ k_status_t semaphore_delete(sema_id_t sem)
 	 */
 	if(s->threads_pending.bitmap){
 		ret = k_sema_not_available;
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
+	k_sched_unlock();	
 	/* release the memory */
 	k_free(sem);
-
-
-	port_irq_unlock(key);
-
+	
 cleanup:
 	return(ret);
 }
