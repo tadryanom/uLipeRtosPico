@@ -714,7 +714,7 @@ void tlsf_free(tlsf_t tlsf, void *ptr)
 
 
 /** Public functions */
-void k_heap_init(void)
+static void k_heap_init(void)
 {
 	size_t s = K_HEAP_SIZE + tlsf_size();
 	k_mem = tlsf_create_with_pool(k_heap,s);
@@ -726,12 +726,12 @@ void *k_malloc(size_t size)
 {
     void *ret = NULL;
 
-    archtype_t key = port_irq_lock();
+    k_sched_lock();
 
     /* request memory from the allocator block. */
     ret = tlsf_malloc(k_mem, size);
 
-    port_irq_unlock(key);
+    k_sched_unlock();
 
     return ret;
 }
@@ -739,13 +739,14 @@ void *k_malloc(size_t size)
 void k_free(void *mem)
 {
 
-    archtype_t key = port_irq_lock();
+    k_sched_lock();
 
     if (mem != NULL)
     {
     	tlsf_free(k_mem, mem);
     }
 
-    port_irq_unlock(key);
+    k_sched_unlock();
+
 }
 

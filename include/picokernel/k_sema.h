@@ -25,7 +25,7 @@ typedef void* sema_id_t;
  *
  *  @return a ksema_t control structure ready to use
  */
-sema_id_t semaphore_create_dynamic(uint32_t initial, uint32_t limit);
+sema_id_t semaphore_create(uint32_t initial, uint32_t limit);
 
 
 /**

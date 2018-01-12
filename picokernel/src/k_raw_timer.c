@@ -134,11 +134,13 @@ static void timer_rebuild_timeline(ktimer_t *t, archtype_t *key)
 	ULIPE_ASSERT(t != NULL);
 	ULIPE_ASSERT(key != NULL);
 	archtype_t cmd;
+	(void)key;
 
 
+	k_sched_lock();
 	/* put the new timer on timeline list */
 	sys_dlist_append(&k_timed_list, &t->timer_list_link);
-
+	k_sched_unlock();
 
 	/* check if timer is not running */
 	if(no_timers) {
@@ -165,13 +167,24 @@ static void timer_rebuild_timeline(ktimer_t *t, archtype_t *key)
 			t->expired  = false;
 
 	}
-	port_irq_unlock(*key);
-	thread_set_signals(&timer_tcb,cmd);
-	*key = port_irq_lock();
 
+	thread_set_signals(&timer_tcb,cmd);
 }
 #endif
 #endif
+
+
+/**
+ *  @fn timer_tick_handler()
+ *  @brief	evaluate if timer task needs to be woken
+ *  @param
+ *  @return
+ */
+static void timer_tick_handler(void)
+{
+
+}
+
 
 /**
  *  @fn timer_dispatcher()
@@ -185,13 +198,10 @@ static void timer_dispatcher(void *args)
 	k_status_t err;
 	archtype_t signals = 0, clear_msk =0;
 
-	archtype_t key = port_irq_lock();
-
 #if(K_ENABLE_TIMERS > 0)
 	actual_timer = NULL;
 #endif
 	next_task_wake = NULL;
-	port_irq_unlock(key);
 
 
 	for(;;){
@@ -214,7 +224,6 @@ static void timer_dispatcher(void *args)
 			clear_msk |= K_TIMER_TICK;
 
 			/* check if exist some thread to wake */
-			archtype_t key = port_irq_lock();
 			timer_step_tick();
 
 
@@ -297,8 +306,6 @@ static void timer_dispatcher(void *args)
 			}
 #endif
 
-			port_irq_unlock(key);
-
 		}
 
 #if((K_ENABLE_TIMERS > 0) && (K_ENABLE_TIMER_GENERIC_SUPPORT<= 0))
@@ -326,22 +333,15 @@ static void timer_dispatcher(void *args)
 
 				k_status_t err = k_make_ready(thr);
 				ULIPE_ASSERT(err == k_status_ok);
-
-				/* no need to perform schedule, when timer thread 
-				 * releases the cpu this will automatically done
-				 */
-				port_irq_unlock(key);
 			}
 
-			key = port_irq_lock();
 
 			/* drops the current timer */
 			sys_dlist_remove(&actual_timer->timer_list_link);
 			actual_timer->running = false;
 			actual_timer->expired = true;
 
-			port_irq_unlock(key);
-
+	
 			/* find next timer to pend */
 			actual_timer= timer_period_sort(&k_timed_list);
 			if(actual_timer == NULL) {
@@ -361,7 +361,6 @@ static void timer_dispatcher(void *args)
 			no_timers = false;
 
 			port_timer_halt();
-			key = port_irq_lock();
 
 
 			/* iterate list and schedule a new timer on timeline */
@@ -371,7 +370,6 @@ static void timer_dispatcher(void *args)
 				port_timer_load_append(actual_timer->load_val);
 
 			}
-			port_irq_unlock(key);
 			port_timer_resume();
 
 		}
@@ -382,7 +380,6 @@ static void timer_dispatcher(void *args)
 			k_list_t *head;
 			no_timers = false;
 
-			key = port_irq_lock();
 			/* gets the only available container of timed list */
 			head = sys_dlist_peek_head(&k_timed_list);
 			ULIPE_ASSERT(head != NULL);	
@@ -412,55 +409,55 @@ static void timer_dispatcher(void *args)
 /** public functions */
 #if(K_ENABLE_TIMERS > 0)
 
-k_status_t timer_start(ktimer_t *t)
+k_status_t timer_start(timer_id_t t)
 {
 	k_status_t ret = k_status_ok;
 	archtype_t key;
 
-	if(t == NULL) {
+	ktimer_t *tim = (ktimer_t *)t;
+
+	if(tim == NULL) {
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
 	
-	if(t->running){
+	if(tim->running){
 		ret = k_timer_running;
 		goto cleanup;
 	}
 
-	if(!t->timer_to_wait) {
+	if(!tim->timer_to_wait) {
 		/* timer not loaded cannot start */
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
 
+	k_sched_lock();
 
-	key = port_irq_lock();
-
-	if(!t->created) {
-		t->created = true;
-		k_work_list_init(&t->threads_pending);
-		sys_dlist_init(&t->timer_list_link);
+	if(!tim->created) {
+		tim->created = true;
+		k_work_list_init(&tim->threads_pending);
+		sys_dlist_init(&tim->timer_list_link);
 
 	}
 
 
-	t->expired = false;
+	tim->expired = false;
 
 
 #if (K_ENABLE_TIMER_GENERIC_SUPPORT > 0)
-	t->load_val = t->timer_to_wait + tick_count;
-	sys_dlist_append(&k_timed_list, &t->timer_list_link);
+	tim->load_val = tim->timer_to_wait + tick_count;
+	sys_dlist_append(&k_timed_list, &tim->timer_list_link);
 
 #else
 
 	/* new valid timer added to list 
 	 * insert it on timeline
 	 */
-
-	timer_rebuild_timeline(t, &key);
+	k_sched_unlock();
+	timer_rebuild_timeline(tim, &key);
 #endif
 
-	port_irq_unlock(key);
 
 cleanup:
 	return(ret);
@@ -468,39 +465,40 @@ cleanup:
 }
 
 
-k_status_t timer_stop(ktimer_t *t)
+k_status_t timer_stop(timer_id_t t)
 {
 	k_status_t ret = k_status_ok;
-	archtype_t key;
+	ktimer_t *tim = (ktimer_t *)t;
 
-	if(t == NULL) {
+
+	if(tim == NULL) {
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
 
-	if(t->expired){
+	if(tim->expired){
 		ret = k_timer_expired;
 		goto cleanup;
 	}
 
 
 
-	key = port_irq_lock();
+	k_sched_lock();
 
-	if(!t->created) {
-		t->created = true;
-		k_work_list_init(&t->threads_pending);
-		sys_dlist_init(&t->timer_list_link);
+	if(!tim->created) {
+		tim->created = true;
+		k_work_list_init(&tim->threads_pending);
+		sys_dlist_init(&tim->timer_list_link);
 
 	}
 
 
-	t->running = false;
-	t->expired = true;
+	tim->running = false;
+	tim->expired = true;
 
 
 #if (K_ENABLE_TIMER_GENERIC_SUPPORT > 0)
-	sys_dlist_remove(&t->timer_list_link);
+	sys_dlist_remove(&tim->timer_list_link);
 
 	/* get the next task */
 	k_list_t *head = sys_dlist_peek_head(&k_timed_list);
@@ -512,7 +510,7 @@ k_status_t timer_stop(ktimer_t *t)
 
 #else
 	port_timer_halt();
-	sys_dlist_remove(&t->timer_list_link);
+	sys_dlist_remove(&tim->timer_list_link);
 
 	/* new valid timer added to list
 	 * insert it on timeline
@@ -528,7 +526,7 @@ k_status_t timer_stop(ktimer_t *t)
 
 #endif
 
-	port_irq_unlock(key);
+	k_sched_unlock();
 
 cleanup:
 	return(ret);
@@ -536,7 +534,7 @@ cleanup:
 }
 
 
-k_status_t timer_poll(ktimer_t *t)
+k_status_t timer_poll(timer_id_t t)
 {
 	k_status_t ret = k_status_ok;
 
@@ -544,41 +542,40 @@ k_status_t timer_poll(ktimer_t *t)
  * use the ticker timer wait
  */
 #ifndef K_ENABLE_TIMER_GENERIC_SUPPORT
+	ktimer_t *tim = (ktimer_t *)t;
 
-	archtype_t key;
 
-
-	if(t == NULL) {
+	if(tim == NULL) {
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
 
-	if(!t->running) {
+	if(!tim->running) {
 		/* timer must be running */
 		ret = k_timer_stopped;
 		goto cleanup;
 	}
 
-	key = port_irq_lock();
+	k_sched_lock();
 
-	if(!t->created) {
-		t->created = true;
-		k_work_list_init(&t->threads_pending);
-		sys_dlist_init(&t->timer_list_link);
+	if(!tim->created) {
+		tim->created = true;
+		k_work_list_init(&tim->threads_pending);
+		sys_dlist_init(&tim->timer_list_link);
 	}
 
 
 	/* only one thread per timer can poll */
-	if(t->threads_pending.bitmap) {
+	if(tim->threads_pending.bitmap) {
 		ret = k_timer_busy;
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
 	/* check if timer is already expired */
-	if(t->expired){
+	if(tim->expired){
 		ret = k_timer_expired;
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}	
 
@@ -595,10 +592,10 @@ k_status_t timer_poll(ktimer_t *t)
 	ULIPE_ASSERT(ret == k_status_ok);
 	thr->thread_wait |= K_THR_PEND_TMR;
 
-	ret = k_pend_obj(thr, &t->threads_pending);
+	ret = k_pend_obj(thr, &tim->threads_pending);
 	ULIPE_ASSERT(ret == k_status_ok);
-	port_irq_unlock(key);
-
+	k_sched_unlock();
+	
 	/* reescheduling is needed */
 	ret = k_sched_and_swap();
 	ULIPE_ASSERT(ret == k_status_ok);	
@@ -612,12 +609,13 @@ cleanup:
 
 
 
-k_status_t timer_set_callback(ktimer_t *t, ktimer_callback_t cb, void *user_data)
+k_status_t timer_set_callback(timer_id_t t, ktimer_callback_t cb, void *user_data)
 {
 	k_status_t ret = k_status_ok;
-	archtype_t key;
+	ktimer_t *tim = (ktimer_t *)t;
 
-	if(t == NULL) {
+
+	if(tim == NULL) {
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
@@ -627,70 +625,70 @@ k_status_t timer_set_callback(ktimer_t *t, ktimer_callback_t cb, void *user_data
 		goto cleanup;		
 	}
 
-	key = port_irq_lock();
 
-	if(!t->created) {
-		t->created = true;
-		k_work_list_init(&t->threads_pending);
-		sys_dlist_init(&t->timer_list_link);
+	k_sched_lock();
+
+	if(!tim->created) {
+		tim->created = true;
+		k_work_list_init(&tim->threads_pending);
+		sys_dlist_init(&tim->timer_list_link);
 
 	}
 
 
-	if(t->running) {
+	if(tim->running) {
 		ret = k_timer_running;
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
-	t->cb = cb;
+	tim->cb = cb;
 	if(user_data)
-		t->user_data = user_data;
+		tim->user_data = user_data;
 
-	port_irq_unlock(key);
+	k_sched_unlock();
 
 cleanup:
 	return(ret);
 }
 
 
-k_status_t timer_set_load(ktimer_t *t, uint32_t load_val)
+k_status_t timer_set_load(timer_id_t t, uint32_t load_val)
 {
 	k_status_t ret = k_status_ok;
-	archtype_t key;
+	ktimer_t *tim = (ktimer_t *)t;
 
-	if(t == NULL) {
+	if(tim == NULL) {
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
 
-	key = port_irq_lock();
-
-	if(!t->created) {
-		t->created = true;
-		k_work_list_init(&t->threads_pending);
-		sys_dlist_init(&t->timer_list_link);
+	k_sched_lock();
+	
+	if(!tim->created) {
+		tim->created = true;
+		k_work_list_init(&tim->threads_pending);
+		sys_dlist_init(&tim->timer_list_link);
 
 	}
 
-	if(t->running){
+	if(tim->running){
 		/* cannot set load value of a running timer */
 		ret = k_timer_running;
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
-	t->timer_to_wait = load_val;
+	tim->timer_to_wait = load_val;
 
-	port_irq_unlock(key);
-
+	k_sched_unlock();
+	
 cleanup:
 	return(ret);
 }
 
 
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
-ktimer_t * timer_create_dynamic(uint32_t load_value)
+timer_id_t timer_create(uint32_t load_value)
 {
 	ktimer_t *ret = NULL;
 
@@ -708,39 +706,36 @@ ktimer_t * timer_create_dynamic(uint32_t load_value)
 	}
 
 cleanup:
-	return(ret);
+	return((timer_id_t)ret);
 }
 
 
-k_status_t timer_delete_dynamic(ktimer_t * tim)
+k_status_t timer_delete(timer_id_t tim)
 {
 	k_status_t ret = k_status_ok;
+	ktimer_t *t = (ktimer_t *)tim;
 
-	if(tim == NULL) {
+
+	if(t == NULL) {
 		ret = k_status_invalid_param;
 		goto cleanup;
 	}
 
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
 
-	if(tim->expired == false) {
+	if(t->expired == false) {
 		ret = k_timer_busy;
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
+	k_sched_unlock();	
+	k_free(t);
 
-	k_free(tim);
-
-	port_irq_unlock(key);
 
 cleanup:
 	return(ret);
 }
-
-#endif
-
-
 
 #endif
 
@@ -756,7 +751,7 @@ k_status_t ticker_timer_wait(uint32_t ticks)
 	tcb_t *thr = thread_get_current();
 	ULIPE_ASSERT(thr != NULL);
 
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
 
 	ret = k_make_not_ready(thr);
 	ULIPE_ASSERT(ret == k_status_ok);
@@ -766,7 +761,7 @@ k_status_t ticker_timer_wait(uint32_t ticks)
 	/* put the new timer on ticker list */
 	sys_dlist_append(&k_ticker_list, &thr->thr_link);
 
-	port_irq_unlock(key);
+	k_sched_unlock();
 	/* reescheduling is needed */
 	ret = k_sched_and_swap();
 	ULIPE_ASSERT(ret == k_status_ok);	
@@ -777,11 +772,7 @@ cleanup:
 
 uint32_t timer_get_tick_count(void)
 {
-	archtype_t key = port_irq_lock();
-	uint32_t ret = tick_count;
-	port_irq_unlock(key);
-
-	return(ret);
+	return(tick_count);
 }
 
 

@@ -155,6 +155,104 @@ typedef struct {
 #if((K_ENABLE_TICKER > 0) || (K_ENABLE_TIMERS > 0))
 static void timer_dispatcher(void *args);
 #endif
+
+/** forward declaration of some external functions needed by os core */
 static void k_idle_thread(void *args);
+static void k_heap_init(void);
+
+
+
+/**
+ *  @fn k_pend_obj()
+ *  @brief pend a task for a particular objects inserting in its list
+ *
+ *  @param thr - thread to pend
+ *  @param obj_list - kernel object wait list
+ *
+ *  @return k_status_ok or error
+ */
+static k_status_t k_pend_obj(tcb_t *thr, k_work_list_t *obj_list);
+
+/**
+ *  @fn k_unpend_obj()
+ *  @brief remove the highest priority task from a pendable object list
+ *
+ *  @param obj_list - kernel object wait list which contains threads
+ *
+ *  @return tcb with highest priority task or NULL if is empty
+ */
+static tcb_t *k_unpend_obj(k_work_list_t *obj_list);
+
+/**
+ *  @fn k_make_ready()
+ *  @brief makes a particular tcb ready inserting into ready list task
+ *
+ *  @param thr - tcb containing the thread who wants to become ready
+ *
+ *  @return k_status_ok or error in case of invalid value
+ */
+
+static k_status_t k_make_ready(tcb_t *thr);
+
+/**
+ *  @fn k_make_not_ready()
+ *  @brief remove a particular tcb from ready list
+ *
+ *  @param thr - tcb containing the thread who wants to remove
+ *
+ *  @return k_status_ok or error in case of invalid value
+ */
+static k_status_t k_make_not_ready(tcb_t *thr);
+
+
+/**
+ *  @fn k_yield()
+ *  @brief send the specified tcb to the back of its current FIFO
+ *
+ *  @param t - tcb containing the thread to perform yielding
+ *
+ *  @return true if reeschedule is needed
+ *
+ *  NOTE: this task does not perform reescheduling automatically!!
+ */
+static bool k_yield(tcb_t *t);
+
+
+/**
+ *  @fn k_sched_and_swap()
+ *  @brief schedule the task set and swap to the next ready to run
+ *
+ *  @param none
+ *
+ *  @return k_status_ok if scheduler is perfomred or error if scheduler is locked
+ *
+ */
+static k_status_t k_sched_and_swap(void);
+
+
+
+/**
+ *  @fn k_sched_lock()
+ *  @brief locks the scheduler, no new task will put in execution until unlocked not be called
+ *
+ *  @param none
+ *
+ *  @return none
+ *
+ */
+static void k_sched_lock(void);
+
+
+/**
+ *  @fn k_sched_unlock()
+ *  @brief unlocks the scheduling allowing the next task to be selected
+ *
+ *  @param none
+ *
+ *  @return none
+ *
+ */
+static void k_sched_unlock(void);
+
 
 #endif

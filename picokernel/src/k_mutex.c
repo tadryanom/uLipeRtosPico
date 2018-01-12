@@ -33,8 +33,7 @@ k_status_t mutex_take(mtx_id_t m, bool try)
 	}
 
 	kmutex_t *mt = (kmutex_t *)m;
-	archtype_t key = port_irq_lock();
-
+	k_sched_lock();
 
 	if(!mt->created) {
 		/* handle first time usage */
@@ -44,7 +43,7 @@ k_status_t mutex_take(mtx_id_t m, bool try)
 
 
 	if(mt->thr_owner == NULL && (try)) {
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
@@ -75,11 +74,11 @@ k_status_t mutex_take(mtx_id_t m, bool try)
 
 
 	if(!reesched){
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
-	port_irq_unlock(key);
+	k_sched_unlock();
 	/*
 	 * if current thread entered on pending state, we need to reesched the
 	 * thread set and find a new thread to execute, otherwise, dispatch idle
@@ -125,7 +124,8 @@ k_status_t mutex_give(kmutex_t *m)
 
 	}
 
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
+
 	if(!mt->created) {
 		/* handle first time usage */
 		k_work_list_init(&mt->threads_pending);
@@ -147,10 +147,11 @@ k_status_t mutex_give(kmutex_t *m)
 		mt->thr_owner  = NULL;
 
 		/* restore thread original priority */
+		k_sched_unlock();		
 		thread_set_prio((tid_t)cur, tmp);
 
-		port_irq_unlock(key);
 		goto cleanup;
+
 	} else {
 		uint8_t tmp = mt->owner_prio;
 		mt->thr_owner = t;
@@ -160,11 +161,8 @@ k_status_t mutex_give(kmutex_t *m)
 		ret = k_make_ready(t);
 		ULIPE_ASSERT(ret == k_status_ok);
 		/*restore last owner original prio */
+		k_sched_unlock();				
 		thread_set_prio((tid_t)cur, tmp);
-
-
-		port_irq_unlock(key);
-		k_sched_and_swap();
 	}
 
 
@@ -195,7 +193,8 @@ k_status_t mutex_delete(mtx_id_t mtx)
 	if(mtx == NULL)
 		goto cleanup;
 
-	archtype_t key = port_irq_lock();
+
+	k_sched_lock();
 
 	/*
 	 * Mutexes only can be deleted if no tasks are pending, otherwise
@@ -204,7 +203,7 @@ k_status_t mutex_delete(mtx_id_t mtx)
 	 */
 	if(m->threads_pending.bitmap){
 		ret = k_status_error;
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
@@ -212,8 +211,8 @@ k_status_t mutex_delete(mtx_id_t mtx)
 	k_free(m);
 
 
-	port_irq_unlock(key);
-
+	k_sched_unlock();
+	
 cleanup:
 	return(ret);
 }

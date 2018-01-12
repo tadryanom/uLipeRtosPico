@@ -121,7 +121,7 @@ static bool thread_handle_signal_wait(tcb_t *t, uint32_t wait_type, archtype_t s
 
 
 /** public fnctions */
-tid_t thread_create(thread_t func, void *arg ,uint32_t stack_size, uint8_t priority)
+tid_t thread_create(uint32_t stack_size, uint8_t priority)
 {
 	tcb_t *ret = (tcb_t *)k_malloc(sizeof(tcb_t));
 	if(ret == NULL)
@@ -201,7 +201,7 @@ k_status_t thread_start(thread_t func, void *arg,tid_t tcb)
 	}
 
 	/* disable scheduling durint task creation */
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
 
 	t->signals_wait = 0;
 	t->thread_wait = 0;
@@ -221,7 +221,7 @@ k_status_t thread_start(thread_t func, void *arg,tid_t tcb)
 
 
 	/* allow kernel to run, perform reeschedule */
-	port_irq_unlock(key);
+	k_sched_unlock();
 	k_sched_and_swap();
 	ret = k_status_ok;
 
@@ -235,7 +235,7 @@ k_status_t thread_delete(tid_t t)
 	k_status_t ret = k_status_ok;
 
 	/* disable scheduling during task abortion */
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
 
 	tcb_t *tcb = (tcb_t *)t;
 
@@ -256,7 +256,7 @@ k_status_t thread_delete(tid_t t)
 	tcb->created = false;
 
 	/* perform reesched to find next task to run */
-	port_irq_unlock(key);
+	k_sched_unlock();
 	k_sched_and_swap();
 	ret = k_status_ok;
 
@@ -273,9 +273,11 @@ k_status_t thread_suspend(tid_t t)
 		goto cleanup;
 	}
 
-	archtype_t key = port_irq_lock();
 
 	tcb_t *tcb = (tcb_t *)t;
+
+
+	k_sched_lock();
 
 	if(tcb == NULL) {
 		/* null thread can be the current */
@@ -287,7 +289,7 @@ k_status_t thread_suspend(tid_t t)
 
 	if(tcb->thread_wait & K_THR_SUSPENDED) {
 		/* thread is already suspended */
-		port_irq_unlock(key);
+		k_sched_unlock();
 		ret = k_thread_susp;
 		goto cleanup;
 	}
@@ -303,7 +305,7 @@ k_status_t thread_suspend(tid_t t)
 
 
 	/* perform reesched to find next task to run */
-	port_irq_unlock(key);
+	k_sched_unlock();
 	k_sched_and_swap();
 	ret = k_status_ok;
 
@@ -330,15 +332,15 @@ k_status_t thread_resume(tid_t t)
 		goto cleanup;
 	}
 
+	k_sched_lock();
 
-	archtype_t key = port_irq_lock();
 	tcb->thread_wait &= ~(K_THR_SUSPENDED);
 
 	ret=k_make_ready(tcb);
 	ULIPE_ASSERT(ret == k_status_ok);
 
 	/* perform reesched to find next task to run */
-	port_irq_unlock(key);
+	k_sched_unlock();
 	k_sched_and_swap();
 	ret = k_status_ok;
 
@@ -369,8 +371,7 @@ uint32_t thread_wait_signals(tid_t t, uint32_t signals, thread_signal_opt_t opt,
 		goto cleanup;
 	}
 
-	archtype_t key = port_irq_lock();
-
+	k_sched_lock();
 
 	/*
 	 * Select and prepare task to wait for the conditions imposed to signaling
@@ -394,7 +395,7 @@ uint32_t thread_wait_signals(tid_t t, uint32_t signals, thread_signal_opt_t opt,
 
 		default:
 			ret = k_status_invalid_param;
-			port_irq_unlock(key);
+			k_sched_unlock();
 			goto cleanup;
 	}
 
@@ -403,7 +404,7 @@ uint32_t thread_wait_signals(tid_t t, uint32_t signals, thread_signal_opt_t opt,
 	/* if signals ware already asserted theres no need to reesched */
 	if(match) {
 		rcvd = tcb->signals_actual;
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
@@ -411,12 +412,13 @@ uint32_t thread_wait_signals(tid_t t, uint32_t signals, thread_signal_opt_t opt,
 	ULIPE_ASSERT(ret == k_status_ok);
 
 
-	port_irq_unlock(key);
+	rcvd = tcb->signals_actual;	
+	
 	/* perform reesched to find next task to run */
+	k_sched_unlock();	
 	k_sched_and_swap();
 	ret = k_status_ok;
 
-	rcvd = tcb->signals_actual;
 
 cleanup:
 	if(err != NULL)
@@ -437,24 +439,24 @@ k_status_t thread_set_signals(tid_t t, uint32_t signals)
 		goto cleanup;
 	}
 
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
 
 	tcb->signals_actual |= signals;
 	match = thread_handle_signal_act(tcb);
 
 
 	if(!match) {
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
 
 	ret = k_make_ready(tcb);
 	ULIPE_ASSERT(ret == k_status_ok);
-	port_irq_unlock(key);
-
+	
 
 	/* perform reesched to find next task to run */
+	k_sched_unlock();	
 	k_sched_and_swap();
 	ret = k_status_ok;
 
@@ -476,7 +478,7 @@ k_status_t thread_clr_signals(tid_t t, uint32_t signals)
 		goto cleanup;
 	}
 
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
 
 	tcb->signals_actual &= ~signals;
 	match = thread_handle_signal_act(tcb);
@@ -484,16 +486,16 @@ k_status_t thread_clr_signals(tid_t t, uint32_t signals)
 
 
 	if(!match) {
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
 	ret = k_make_ready(tcb);
 	ULIPE_ASSERT(ret == k_status_ok);
-	port_irq_unlock(key);
-
+	
 
 	/* perform reesched to find next task to run */
+	k_sched_unlock();	
 	k_sched_and_swap();
 	ret = k_status_ok;
 
@@ -507,7 +509,7 @@ k_status_t thread_yield(void)
 	k_status_t ret = k_status_ok;
 	bool resched = false;
 
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
 	tcb_t *t = k_current_task;
 
 
@@ -520,11 +522,11 @@ k_status_t thread_yield(void)
 	resched = k_yield(t);
 
 	if(!resched) {
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
-	port_irq_unlock(key);
+	k_sched_unlock();
 	k_sched_and_swap();
 
 cleanup:
@@ -542,7 +544,7 @@ k_status_t thread_set_prio(tid_t t, uint8_t prio)
 		goto cleanup;
 	}
 
-	archtype_t key = port_irq_lock();
+	k_sched_lock();
 
 
 	if(tcb == NULL) {
@@ -556,7 +558,7 @@ k_status_t thread_set_prio(tid_t t, uint8_t prio)
 	if(tcb->thread_prio == prio) {
 		/* same prio, no need to process it */
 		ret = k_status_invalid_param;
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
@@ -575,14 +577,14 @@ k_status_t thread_set_prio(tid_t t, uint8_t prio)
 
 
 	if(tcb->thread_wait) {
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
 	ret = k_make_ready(tcb);
 	ULIPE_ASSERT(ret == k_status_ok);
-	port_irq_unlock(key);
 
+	k_sched_unlock();	
 	k_sched_and_swap();
 	ret = k_status_ok;
 

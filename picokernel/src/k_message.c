@@ -73,7 +73,6 @@ static k_status_t message_handle_pend(kmsg_t *m,bool insert, msg_opt_t opt, arch
 k_status_t message_insert(msg_id_t m, void *data, uint32_t size, msg_opt_t opt)
 {
 	k_status_t ret = k_status_ok;
-	archtype_t key;
 
 	if(m == NULL) {
 		ret = k_status_invalid_param;
@@ -98,7 +97,7 @@ k_status_t message_insert(msg_id_t m, void *data, uint32_t size, msg_opt_t opt)
 		goto cleanup;
 	}
 
-	key = port_irq_lock();
+	k_sched_lock();
 
 	if(!msg->created) {
 		msg->created = true;
@@ -113,7 +112,7 @@ k_status_t message_insert(msg_id_t m, void *data, uint32_t size, msg_opt_t opt)
 		ret = message_handle_pend(msg,true, opt, key);
 
 		if(ret != k_status_ok) {
-			port_irq_unlock(key);
+			k_sched_unlock();
 			goto cleanup;
 		}
 	}
@@ -139,15 +138,15 @@ k_status_t message_insert(msg_id_t m, void *data, uint32_t size, msg_opt_t opt)
 	tcb_t *thr = k_unpend_obj(&msg->rd_threads_pending);
 	if(thr == NULL) {
 		/* no need to reeschedule task list */
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
 	thr->thread_wait &= ~(K_THR_PEND_MSG);
 	ret = k_make_ready(thr);
 	ULIPE_ASSERT(ret == k_status_ok);
-	port_irq_unlock(key);
-
+	k_sched_unlock();
+	
 
 	/* reeschedule task set */
 	ret = k_sched_and_swap();
@@ -162,7 +161,6 @@ cleanup:
 k_status_t message_remove(msg_id_t msg, void *data, uint32_t *size, bool peek, msg_opt_t opt)
 {
 	k_status_t ret = k_status_ok;
-	archtype_t key;
 
 	if(msg== NULL) {
 		ret = k_status_invalid_param;
@@ -181,7 +179,7 @@ k_status_t message_remove(msg_id_t msg, void *data, uint32_t *size, bool peek, m
 		goto cleanup;
 	}
 
-	key = port_irq_lock();
+	k_sched_lock();
 
 	if(!m->created) {
 		m->created = true;
@@ -198,7 +196,7 @@ k_status_t message_remove(msg_id_t msg, void *data, uint32_t *size, bool peek, m
 		ret = message_handle_pend(m,false, opt,key);
 
 		if(ret != k_status_ok) {
-			port_irq_unlock(key);
+			k_sched_unlock();
 			goto cleanup;
 		}
 
@@ -223,7 +221,7 @@ k_status_t message_remove(msg_id_t msg, void *data, uint32_t *size, bool peek, m
 	 * just exit
 	 */
 	if(peek) {
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
@@ -232,15 +230,15 @@ k_status_t message_remove(msg_id_t msg, void *data, uint32_t *size, bool peek, m
 
 	tcb_t *thr = k_unpend_obj(&m->wr_threads_pending);
 	if(thr == NULL) {
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
 
 	ret = k_make_ready(thr);
 	ULIPE_ASSERT(ret == k_status_ok);
-	port_irq_unlock(key);
-
+	k_sched_unlock();
+	
 	ret = k_sched_and_swap();
 	ULIPE_ASSERT(ret == k_status_ok);
 cleanup:
@@ -306,21 +304,24 @@ k_status_t message_delete(msg_id_t msg)
 
 
 	kmsg_t* m = (kmsg_t *)msg;
-	archtype_t key = port_irq_lock();
+
+
+	k_sched_lock();
 
 	/* cannot delete a message with waiting tasks
 	 */
 	if((m->rd_threads_pending.bitmap) || (m->wr_threads_pending.bitmap)) {
 		ret = k_status_error;
-		port_irq_unlock(key);
+		k_sched_unlock();
 		goto cleanup;
 	}
 
+	k_sched_unlock();
+	
 	/* release memory and exit */
 	k_free(m->data);
 	k_free(m);
 
-	port_irq_unlock(key);
 cleanup:
 	return(ret);
 }

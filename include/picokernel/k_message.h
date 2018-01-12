@@ -55,7 +55,7 @@ k_status_t message_delete(msg_id_t msg);
  *
  *  @return k_status_ok or error for invalid values/queue full
  */
-k_status_t message_insert(msg_id_t *msg, void *data, uint32_t size, msg_opt_t opt);
+k_status_t message_insert(msg_id_t msg, void *data, uint32_t size, msg_opt_t opt);
 
 
 

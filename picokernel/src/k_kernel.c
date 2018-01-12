@@ -11,8 +11,11 @@
 static tid_t idle_thread;
 
 /* current and highest priority tasks obtained from scheduler */
-static tcb_t *k_current_task;
-static tcb_t *k_high_prio_task;
+tcb_t *k_current_task;
+tcb_t *k_high_prio_task;
+bool k_running = false;
+
+
 
 static k_work_list_t k_rdy_list;
 static k_list_t waiting_to_delete_list;
@@ -23,9 +26,9 @@ static uint32_t irq_counter;
 uint32_t irq_lock_nest;
 
 
-static bool k_running = false;
 static archtype_t irq_nesting = 0;
 static k_wakeup_info_t wu_info;
+static uint32_t sched_lock_nest=0;
 
 
 #if((K_ENABLE_TICKER > 0) || (K_ENABLE_TIMERS > 0))
@@ -56,6 +59,9 @@ static tcb_t *k_sched(k_work_list_t *l)
 
 	ULIPE_ASSERT(l != NULL);
 
+	archtype_t key = port_irq_lock();
+	
+
 	/* no tasks ready, just hint to kernel to load the idle task */
 	if(!l->bitmap)
 		goto cleanup;
@@ -74,6 +80,8 @@ static tcb_t *k_sched(k_work_list_t *l)
 	head = sys_dlist_peek_head(&l->list_head[prio]);
 	if(head != NULL)
 		ret = CONTAINER_OF(head, tcb_t, thr_link);
+
+	port_irq_unlock(key);
 
 cleanup:
 	return(ret);
@@ -104,10 +112,12 @@ static k_status_t k_pend_obj(tcb_t *thr, k_work_list_t *obj_list)
 	 * both cases, for negative priority we remove the signal and use its upper
 	 * 3 bits to insert in system level priorities list
 	 */
+	archtype_t key = port_irq_lock();
 
 	obj_list->bitmap |= (1 << thr->thread_prio);
 	sys_dlist_append(&obj_list->list_head[thr->thread_prio], &thr->thr_link);
 
+	port_irq_unlock(key);
 
 	return(err);
 
@@ -134,6 +144,9 @@ static tcb_t * k_unpend_obj(k_work_list_t *obj_list)
 	 * so to avoid the use of a couple of pointers tracking objects
 	 * we add this exception of the real time execution rule
 	 */
+
+	archtype_t key = port_irq_lock();
+
 	uint32_t bit_finder = 0x00000001;
 
 	for ( uint8_t i = 0; i < K_PRIORITY_LEVELS; i++) {
@@ -143,6 +156,7 @@ static tcb_t * k_unpend_obj(k_work_list_t *obj_list)
 		}
 	}
 
+	port_irq_unlock(key);
 
 	/*
 	 * unpend a obj is a little bit complex relative to a
@@ -153,15 +167,20 @@ static tcb_t * k_unpend_obj(k_work_list_t *obj_list)
 	 * waiting for a kernel object and remove it from list
 	 */
 	thr = k_sched(obj_list);
+
 	if(thr == &idle_thread) {
 		thr = NULL;
 		goto cleanup;
 	}
 
+	key = port_irq_lock();
+
 	sys_dlist_remove(&thr->thr_link);
 	if(sys_dlist_is_empty(&obj_list->list_head[thr->thread_prio])){
 		obj_list->bitmap &= ~(1 << thr->thread_prio);
 	}
+
+	port_irq_unlock();
 
 cleanup:
 	return(thr);
@@ -193,9 +212,13 @@ static k_status_t k_make_ready(tcb_t *thr)
 	 * both cases, for negative priority we remove the signal and use its upper
 	 * 3 bits to insert in system level priorities list
 	 */
+
+	archtype_t key = port_irq_lock(); 
+
 	k_rdy_list.bitmap |= (1 << thr->thread_prio);
 	sys_dlist_append(&k_rdy_list.list_head[thr->thread_prio], &thr->thr_link);
 
+	port_irq_unlock();
 
 cleanup:
 	return(err);
@@ -222,13 +245,14 @@ static k_status_t k_make_not_ready(tcb_t *thr)
 #endif
 
 
+	archtype_t key = port_irq_lock();
 
 	sys_dlist_remove(&thr->thr_link);
 	if(sys_dlist_is_empty(&k_rdy_list.list_head[thr->thread_prio])) {
 		k_rdy_list.bitmap &= ~(1 << thr->thread_prio);
 	}
 
-
+	port_irq_unlock(key);
 
 	return(err);
 
@@ -246,8 +270,6 @@ static bool k_yield(tcb_t *t)
 		ULIPE_ASSERT( k_current_task->stk_usage * sizeof(archtype_t) <=  k_current_task->stack_size * sizeof(archtype_t));
 	}
 #endif
-
-
 
 	bool resched = false;
 
@@ -284,8 +306,12 @@ static k_status_t k_sched_and_swap(void)
 	 * that all ISRs was processed and scheduling is the
 	 * last ISR to process
 	 */
+
+	if(sched_lock_nest > 0) {
+		goto cleanup;		
+	}
+
 	if(irq_counter > 0){
-		ret = k_status_sched_locked;
 		goto cleanup;
 	}
 
@@ -329,10 +355,30 @@ static void k_work_list_init(k_work_list_t *l)
 	}
 #endif
 
+	archtype_t key = port_irq_lock();
 
 	l->bitmap = 0;
 	for(uint8_t i=0; i < K_PRIORITY_LEVELS ; i++)
 		sys_dlist_init(&l->list_head[i]);
+
+	port_irq_unlock(key);	
+}
+
+static void k_sched_lock(void)
+{
+	archtype_t key = port_irq_lock();
+	if(sched_lock_nest < 0xFFFFFFFF)
+		sched_lock_nest++;
+	port_irq_unlock(key);
+}
+
+
+static void k_sched_unlock(void)
+{
+	archtype_t key = port_irq_lock();
+	if(sched_lock_nest < 0xFFFFFFFF)
+		sched_lock_nest--;
+	port_irq_unlock(key);
 }
 
 
@@ -364,11 +410,7 @@ k_status_t kernel_init(void)
 	k_status_t err = thread_start(&k_idle_thread, &wu_info, idle_thread);
 	ULIPE_ASSERT(err == k_status_ok);
 
-	
-#if(K_ENABLE_DYNAMIC_ALLOCATOR > 0)
-	extern void k_heap_init(void);
 	k_heap_init();
-#endif
 
 	k_make_not_ready((tcb_t *)idle_thread);
 	((tcb_t *)(idle_thread))->thread_prio = K_IDLE_THREAD_PRIO;
@@ -422,12 +464,9 @@ void kernel_irq_in(void)
 	/* this function only can be called if os is executing  and from an isr*/
 	if(!k_running)
 		return;
-#if(ARCH_TYPE_AVR_TINY > 0)
-	(void)0;
-#else 		
+
 	if(!port_from_isr())
 		return;
-#endif
 
 	if(irq_counter < (archtype_t)0xFFFFFFFF)
 		irq_counter++;
@@ -454,7 +493,7 @@ void kernel_irq_out(void)
 
 	if(irq_counter > (archtype_t)0) {
 		irq_counter--;
-		/* all isrs attended, perform a system reeschedule */
+		/* all isrs attended, perform a system reeschedule if it is unlocked*/
 		if(!irq_counter)
 			k_sched_and_swap();
 	}
