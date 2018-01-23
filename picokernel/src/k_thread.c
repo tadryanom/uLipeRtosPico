@@ -360,7 +360,7 @@ uint32_t thread_wait_signals(tid_t t, uint32_t signals, thread_signal_opt_t opt,
 	if(tcb == NULL) {
 		/* null thread can be the current */
 		tcb = k_current_task;
-		ULIPE_ASSERT(t!= NULL);
+		ULIPE_ASSERT(tcb!= NULL);
 	}
 
 

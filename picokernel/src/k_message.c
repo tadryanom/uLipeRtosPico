@@ -109,7 +109,7 @@ k_status_t message_insert(msg_id_t m, void *data, uint32_t size, msg_opt_t opt)
 		/* message queue is actually full,
 		 * so check the wait options passed by user
 		 */
-		ret = message_handle_pend(msg,true, opt, key);
+		ret = message_handle_pend(msg,true, opt, 0);
 
 		if(ret != k_status_ok) {
 			k_sched_unlock();
@@ -193,7 +193,7 @@ k_status_t message_remove(msg_id_t msg, void *data, uint32_t *size, bool peek, m
 		/* message queue is actually empty,
 		 * so check the wait options passed by user
 		 */
-		ret = message_handle_pend(m,false, opt,key);
+		ret = message_handle_pend(m,false, opt,0);
 
 		if(ret != k_status_ok) {
 			k_sched_unlock();
@@ -260,7 +260,7 @@ msg_id_t message_create(uint32_t noof_slots, uint32_t slot_size_val)
 	ret = k_malloc(sizeof(kmsg_t));
 
 	/* maybe we have not enough memory */
-	if(ret == NULL);
+	if(ret == NULL)
 		goto cleanup;
 
 

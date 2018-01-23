@@ -412,7 +412,6 @@ static void timer_dispatcher(void *args)
 k_status_t timer_start(timer_id_t t)
 {
 	k_status_t ret = k_status_ok;
-	archtype_t key;
 
 	ktimer_t *tim = (ktimer_t *)t;
 

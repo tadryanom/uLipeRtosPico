@@ -128,28 +128,6 @@ typedef struct kmsg{
 }kmsg_t;
 
 
-/* work data structure */
-typedef struct wqueue_job {
-	wqueue_handler_t handler;
-	k_list_t node;
-}wqueue_job_t;
-
-/* workqueue data structure */
-typedef struct wqueue {
-	tcb_t *thr;
-	k_list_t fifo;
-}wqueue_t;
-
-
-/* defines the structure which controls the memory pool */
-typedef struct {
-	uint32_t bitmap_h;
-	uint32_t bitmap_l[32];
-	uint32_t block_size;
-	uint16_t numblocks;
-	void *mem_pool;
-}pool_info_t;
-
 
 /* forward declaration to internal functions used by kernel */
 #if((K_ENABLE_TICKER > 0) || (K_ENABLE_TIMERS > 0))

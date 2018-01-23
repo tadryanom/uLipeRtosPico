@@ -92,17 +92,19 @@ k_status_t semaphore_give(sema_id_t s, uint32_t count)
 		goto cleanup;
 	}
 
+	ksema_t *sema = (ksema_t *)s;
+
 	k_sched_lock();
 
-	if(!s->created) {
+	if(!sema->created) {
 		/* handle first time usage */
-		k_work_list_init(&s->threads_pending);
-		s->created = true;
+		k_work_list_init(&sema->threads_pending);
+		sema->created = true;
 	}
 
-	s->cnt+= count;
-	if(s->cnt > s->limit)
-		s->cnt = s->limit;
+	sema->cnt+= count;
+	if(sema->cnt > sema->limit)
+		sema->cnt = sema->limit;
 
 
 	/*
@@ -110,15 +112,15 @@ k_status_t semaphore_give(sema_id_t s, uint32_t count)
 	 * we need to verify if a new highprio task is available to
 	 * run
 	 */
-	t = k_unpend_obj(&s->threads_pending);
+	t = k_unpend_obj(&sema->threads_pending);
 	if(t == NULL) {
 		/* no tasks pendings, just get out here */
 		k_sched_unlock();
 		goto cleanup;
 	} else {
 
-		if(s->cnt > 0)
-			s->cnt--;
+		if(sema->cnt > 0)
+			sema->cnt--;
 	}
 
 	t->thread_wait &= ~(K_THR_PEND_SEMA);

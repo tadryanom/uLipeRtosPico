@@ -91,7 +91,7 @@ cleanup:
 
 
 
-k_status_t mutex_give(kmutex_t *m)
+k_status_t mutex_give(mtx_id_t m)
 {
 	k_status_t ret = k_status_ok;
 	tcb_t *t = NULL;
