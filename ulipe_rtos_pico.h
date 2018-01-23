@@ -114,7 +114,6 @@ extern void user_lowpower_exit(void *arg);
 static inline void ulipe_assert(bool x)
 {
 	if(!x){
-		port_set_break();
 		while(1);
 	}
 }

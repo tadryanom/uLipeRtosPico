@@ -10,6 +10,7 @@
 #include "tests.h"
 #include "../ulipe_rtos_pico.h"
 
+#if(ENABLE_TESTING > 0)
 
 
 /** test sequence table */
@@ -97,4 +98,4 @@ int main(int argc, char **argv)
     kernel_start();
     return 0;
 }
-
+#endif

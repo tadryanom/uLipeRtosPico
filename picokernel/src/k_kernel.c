@@ -23,10 +23,8 @@ static k_list_t k_timed_list;
 
 static bool k_configured;
 static uint32_t irq_counter;
-uint32_t irq_lock_nest;
 
 
-static archtype_t irq_nesting = 0;
 static k_wakeup_info_t wu_info;
 static uint32_t sched_lock_nest=0;
 
@@ -44,7 +42,7 @@ static tid_t timer_tcb;
  */
 static tcb_t *k_sched(k_work_list_t *l)
 {
-	tcb_t *ret = &idle_thread;
+	tcb_t *ret = (tcb_t *)idle_thread;
 	k_list_t *head;
 
 #if K_DEBUG > 0
@@ -152,7 +150,7 @@ static tcb_t * k_unpend_obj(k_work_list_t *obj_list)
 	for ( uint8_t i = 0; i < K_PRIORITY_LEVELS; i++) {
 		if(bit_finder & obj_list->bitmap) {
 			if (sys_dlist_is_empty(&obj_list->list_head[(K_PRIORITY_LEVELS - 1) + i]))
-				obj_list->bitmap &= ~(1 << K_PRIORITY_LEVELS - 1 + i);
+				obj_list->bitmap &= ~(1 <<  i);
 		}
 	}
 
@@ -168,7 +166,7 @@ static tcb_t * k_unpend_obj(k_work_list_t *obj_list)
 	 */
 	thr = k_sched(obj_list);
 
-	if(thr == &idle_thread) {
+	if(thr == (tcb_t *)idle_thread) {
 		thr = NULL;
 		goto cleanup;
 	}
@@ -180,7 +178,7 @@ static tcb_t * k_unpend_obj(k_work_list_t *obj_list)
 		obj_list->bitmap &= ~(1 << thr->thread_prio);
 	}
 
-	port_irq_unlock();
+	port_irq_unlock(key);
 
 cleanup:
 	return(thr);
@@ -218,7 +216,7 @@ static k_status_t k_make_ready(tcb_t *thr)
 	k_rdy_list.bitmap |= (1 << thr->thread_prio);
 	sys_dlist_append(&k_rdy_list.list_head[thr->thread_prio], &thr->thr_link);
 
-	port_irq_unlock();
+	port_irq_unlock(key);
 
 cleanup:
 	return(err);
@@ -319,7 +317,7 @@ static k_status_t k_sched_and_swap(void)
 	k_high_prio_task = k_sched(&k_rdy_list);
 	if(k_high_prio_task == NULL) {
 		/* no other tasks ready to run, puts the idle thread */
-		k_high_prio_task = &idle_thread;
+		k_high_prio_task = (tcb_t *)idle_thread;
 	}
 
 
@@ -384,9 +382,11 @@ static void k_sched_unlock(void)
 
 k_status_t kernel_init(void)
 {
-	irq_lock_nest = 0;
-
 	archtype_t key = port_irq_lock();
+
+	/* kernel memory always needs to set first */
+	k_heap_init();
+
 
 	/* no priority ready and no tasks waiting*/
 	k_work_list_init(&k_rdy_list);
@@ -409,8 +409,6 @@ k_status_t kernel_init(void)
 	ULIPE_ASSERT(idle_thread != NULL);
 	k_status_t err = thread_start(&k_idle_thread, &wu_info, idle_thread);
 	ULIPE_ASSERT(err == k_status_ok);
-
-	k_heap_init();
 
 	k_make_not_ready((tcb_t *)idle_thread);
 	((tcb_t *)(idle_thread))->thread_prio = K_IDLE_THREAD_PRIO;

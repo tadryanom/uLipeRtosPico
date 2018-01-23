@@ -19,7 +19,7 @@
 /* kernel debugging */
 #define K_DEBUG 						1
 /* architecture definition */
-#define ARCH_TYPE					    AVR_MEGA
+#define ARCH_TYPE					    ARM_CMX
 
 #define K_MACHINE_CLOCK					12000000
 #define K_TICKER_RATE					1000
@@ -28,6 +28,7 @@
 #define K_ARCH_MEM_WIDTH_WORD	        1
 
 /* general kernel configuration */
+#define K_HEAP_SIZE						16 * 1024
 #define K_MINIMAL_STACK_VAL	            64
 #define K_TIMER_DISPATCHER_PRIORITY	    24
 #define K_TIMER_DISPATCHER_STACK_SIZE	128
